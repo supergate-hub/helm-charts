@@ -3,7 +3,7 @@ entries:
   harbor:
   - apiVersion: v1
     appVersion: 2.13.1
-    created: "2025-09-30T13:53:58.930806+09:00"
+    created: "2025-10-14T07:22:28.65965257Z"
     description: An open source trusted cloud native registry that stores, signs,
       and scans content
     digest: ef17afa156078b9ab1503a25908058ccd902fb0da045583373ce71615ab82965
@@ -27,7 +27,7 @@ entries:
     - https://github.com/goharbor/harbor
     - https://github.com/goharbor/harbor-helm
     urls:
-    - harbor-1.17.1.tgz
+    - https://github.com/supergate-hub/helm-charts/releases/download/harbor-1.17.1.tgz/harbor-1.17.1.tgz
     version: 1.17.1
   kafka-cluster:
   - apiVersion: v2
@@ -198,4 +198,4 @@ entries:
     urls:
     - strimzi-kafka-operator-helm-3-chart-0.47.0.tgz
     version: 0.47.0
-generated: "2025-09-30T13:53:58.927292+09:00"
+generated: "2025-10-14T07:22:28.656467853Z"

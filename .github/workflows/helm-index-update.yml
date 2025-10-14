@@ -50,6 +50,7 @@ jobs:
           VERSION:   ${{ github.event.inputs.chart_version }}
         run: |
           set -euo pipefail
+
           helm repo add "${REPO_NAME}" "${REPO_URL}"
           helm repo update
 
@@ -57,17 +58,17 @@ jobs:
           helm pull "${REPO_NAME}/${CHART}" --version "${VERSION}" --destination .work
 
           TGZ_FILE="$(ls .work/${CHART}-${VERSION}.tgz)"
-          echo "TGZ_FILE=${TGZ_FILE}" >> $GITHUB_ENV
+          echo "TGZ_FILE=${TGZ_FILE}" >> "$GITHUB_ENV"
 
           helm show chart "${REPO_NAME}/${CHART}" --version "${VERSION}" > .work/chart.yaml
           APP_VERSION="$(yq -r '.appVersion // ""' .work/chart.yaml)"
-          echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
+          echo "APP_VERSION=${APP_VERSION}" >> "$GITHUB_ENV"
 
-          DIGEST=$(sha256sum "${TGZ_FILE}" | awk '{print $1}')
-          echo "DIGEST=${DIGEST}" >> $GITHUB_ENV
+          DIGEST="$(sha256sum "${TGZ_FILE}" | awk '{print $1}')"
+          echo "DIGEST=${DIGEST}" >> "$GITHUB_ENV"
 
-          FILE_BASENAME="$(basename "${TGZ_FILE}")"
-          echo "FILE_BASENAME=${FILE_BASENAME}" >> $GITHUB_ENV
+          FILE_BASENAME="$(basename "${TGZ_FILE}")" # e.g. harbor-1.17.1.tgz
+          echo "FILE_BASENAME=${FILE_BASENAME}" >> "$GITHUB_ENV"
 
       - name: Extract chart to main/charts/<name>
         env:
@@ -76,6 +77,7 @@ jobs:
           TGZ_FILE:  ${{ env.TGZ_FILE }}
         run: |
           set -euo pipefail
+
           rm -rf .work/extracted
           mkdir -p .work/extracted
           tar -xzf "${TGZ_FILE}" -C .work/extracted
@@ -103,7 +105,7 @@ jobs:
       - name: Create GitHub Release (tag = tgz filename) & upload asset
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.FILE_BASENAME }}
+          tag_name: ${{ env.FILE_BASENAME }}   # e.g. harbor-1.17.1.tgz
           name: ${{ env.FILE_BASENAME }}
           draft: false
           prerelease: false
@@ -128,27 +130,30 @@ jobs:
           set -euo pipefail
           cd gh-pages
 
-          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          NOW="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           OWNER_REPO="${GITHUB_REPOSITORY}"
           FILE_NAME="${CHART}-${VERSION}.tgz"
           TAG="${FILE_BASENAME}"
           RELEASE_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/${FILE_NAME}"
 
+          # skeleton
           if [ ! -f index.yaml ]; then
             cat > index.yaml <<EOF
-apiVersion: v1
-entries: {}
-generated: "${NOW}"
-EOF
+          apiVersion: v1
+          entries: {}
+          generated: "${NOW}"
+          EOF
           fi
 
-          TMP_JSON=$(mktemp)
+          TMP_JSON="$(mktemp)"
           yq -o=json '.' index.yaml > "${TMP_JSON}"
 
+          # drop same version if exists
           jq --arg n "${CHART}" --arg v "${VERSION}" '
             .entries[$n] = ((.entries[$n] // []) | map(select(.version != $v)))
           ' "${TMP_JSON}" > "${TMP_JSON}.1" && mv "${TMP_JSON}.1" "${TMP_JSON}"
 
+          # append new entry
           jq --arg n "${CHART}" \
              --arg v "${VERSION}" \
              --arg av "${APP_VERSION}" \

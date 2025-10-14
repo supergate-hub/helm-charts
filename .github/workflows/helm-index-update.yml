@@ -1,0 +1,190 @@
+name: Curate & Release Helm Chart (extract to main + index on gh-pages)
+
+on:
+  workflow_dispatch:
+    inputs:
+      chart_repo_name:
+        description: 'Upstream Helm repo name (e.g., harbor, bitnami)'
+        required: true
+      chart_repo_url:
+        description: 'Upstream Helm repo URL (e.g., https://helm.goharbor.io)'
+        required: true
+      chart_name:
+        description: 'Chart name (e.g., harbor)'
+        required: true
+      chart_version:
+        description: 'Chart version (e.g., 1.17.1)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: curate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  curate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq yq rsync coreutils
+
+      - name: Pull chart from upstream & extract metadata
+        env:
+          REPO_NAME: ${{ github.event.inputs.chart_repo_name }}
+          REPO_URL:  ${{ github.event.inputs.chart_repo_url }}
+          CHART:     ${{ github.event.inputs.chart_name }}
+          VERSION:   ${{ github.event.inputs.chart_version }}
+        run: |
+          set -euo pipefail
+
+          helm repo add "${REPO_NAME}" "${REPO_URL}"
+          helm repo update
+
+          mkdir -p .work
+          helm pull "${REPO_NAME}/${CHART}" --version "${VERSION}" --destination .work
+
+          TGZ_FILE="$(ls .work/${CHART}-${VERSION}.tgz)"
+          echo "TGZ_FILE=${TGZ_FILE}" >> "$GITHUB_ENV"
+
+          helm show chart "${REPO_NAME}/${CHART}" --version "${VERSION}" > .work/chart.yaml
+          APP_VERSION="$(yq -r '.appVersion // ""' .work/chart.yaml)"
+          echo "APP_VERSION=${APP_VERSION}" >> "$GITHUB_ENV"
+
+          DIGEST="$(sha256sum "${TGZ_FILE}" | awk '{print $1}')"
+          echo "DIGEST=${DIGEST}" >> "$GITHUB_ENV"
+
+          FILE_BASENAME="$(basename "${TGZ_FILE}")" # e.g. harbor-1.17.1.tgz
+          echo "FILE_BASENAME=${FILE_BASENAME}" >> "$GITHUB_ENV"
+
+      - name: Extract chart to main/charts/<name>
+        env:
+          CHART:     ${{ github.event.inputs.chart_name }}
+          VERSION:   ${{ github.event.inputs.chart_version }}
+          TGZ_FILE:  ${{ env.TGZ_FILE }}
+        run: |
+          set -euo pipefail
+
+          rm -rf .work/extracted
+          mkdir -p .work/extracted
+          tar -xzf "${TGZ_FILE}" -C .work/extracted
+
+          SRC_DIR=".work/extracted/${CHART}"
+          if [ ! -d "${SRC_DIR}" ]; then
+            echo "ERROR: expected directory ${SRC_DIR} not found after extraction"
+            exit 1
+          fi
+
+          DEST_DIR="charts/${CHART}"
+          mkdir -p "${DEST_DIR}"
+          rsync -a --delete "${SRC_DIR}/" "${DEST_DIR}/"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${DEST_DIR}"
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(charts): sync ${CHART} ${VERSION} into charts/${CHART}/"
+            git push origin main
+          else
+            echo "No changes in main (charts/${CHART}/ already up to date)."
+          fi
+
+      - name: Create GitHub Release (tag = tgz filename) & upload asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.FILE_BASENAME }}   # e.g. harbor-1.17.1.tgz
+          name: ${{ env.FILE_BASENAME }}
+          draft: false
+          prerelease: false
+          files: |
+            ${{ env.TGZ_FILE }}
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+          fetch-depth: 0
+
+      - name: Merge/update gh-pages/index.yaml with release URL
+        env:
+          CHART:         ${{ github.event.inputs.chart_name }}
+          VERSION:       ${{ github.event.inputs.chart_version }}
+          DIGEST:        ${{ env.DIGEST }}
+          APP_VERSION:   ${{ env.APP_VERSION }}
+          FILE_BASENAME: ${{ env.FILE_BASENAME }}
+        run: |
+          set -euo pipefail
+          cd gh-pages
+
+          NOW="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          OWNER_REPO="${GITHUB_REPOSITORY}"
+          FILE_NAME="${CHART}-${VERSION}.tgz"
+          TAG="${FILE_BASENAME}"
+          RELEASE_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/${FILE_NAME}"
+
+          # skeleton
+          if [ ! -f index.yaml ]; then
+            cat > index.yaml <<EOF
+          apiVersion: v1
+          entries: {}
+          generated: "${NOW}"
+          EOF
+          fi
+
+          TMP_JSON="$(mktemp)"
+          yq -o=json '.' index.yaml > "${TMP_JSON}"
+
+          # drop same version if exists
+          jq --arg n "${CHART}" --arg v "${VERSION}" '
+            .entries[$n] = ((.entries[$n] // []) | map(select(.version != $v)))
+          ' "${TMP_JSON}" > "${TMP_JSON}.1" && mv "${TMP_JSON}.1" "${TMP_JSON}"
+
+          # append new entry
+          jq --arg n "${CHART}" \
+             --arg v "${VERSION}" \
+             --arg av "${APP_VERSION}" \
+             --arg u "${RELEASE_URL}" \
+             --arg d "${DIGEST}" \
+             --arg now "${NOW}" '
+            .entries[$n] = ((.entries[$n] // []) + [{
+              version: $v,
+              appVersion: ( ($av == "" or $av == "null") ? null : $av ),
+              created: $now,
+              digest: $d,
+              urls: [$u]
+            }]) |
+            .generated = $now
+          ' "${TMP_JSON}" > "${TMP_JSON}.2" && mv "${TMP_JSON}.2" "${TMP_JSON}"
+
+          yq -P '.' "${TMP_JSON}" > index.yaml
+
+          echo "Release URL set to: ${RELEASE_URL}"
+          head -n 60 index.yaml || true
+
+      - name: Commit & push gh-pages
+        run: |
+          set -euo pipefail
+          cd gh-pages
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.yaml
+          if ! git diff --staged --quiet; then
+            git commit -m "ci(index): ${{ github.event.inputs.chart_name }} @ ${{ github.event.inputs.chart_version }} -> release asset URL"
+            git push origin gh-pages
+          else
+            echo "No index changes."
+          fi

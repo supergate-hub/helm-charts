@@ -1,0 +1,109 @@
+name: Helm Chart Index Update
+
+on:
+    workflow_dispatch:
+        inputs:
+            chart_repo_name:
+                description: "Helm repository name (e.g., harbor)"
+                required: true
+            chart_repo_url:
+                description: "Helm repository URL (e.g., https://helm.goharbor.io)"
+                required: true
+            chart_name:
+                description: "Helm chart name (e.g., harbor)"
+                required: true
+            chart_version:
+                description: "Helm chart version (e.g., 1.17.1)"
+                required: true
+
+jobs:
+    update-index:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout gh-pages branch
+              uses: actions/checkout@v4
+              with:
+                  ref: gh-pages
+
+            - name: Install yq
+              run: |
+                  set -euo pipefail
+                  YQ_VERSION=v4.44.3
+                  curl -sSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" -o yq
+                  sudo mv yq /usr/local/bin/yq
+                  sudo chmod +x /usr/local/bin/yq
+
+            - name: Fetch upstream index.yaml
+              env:
+                  CHART_REPO_URL: ${{ github.event.inputs.chart_repo_url }}
+              run: |
+                  set -euo pipefail
+                  curl -sSL "${CHART_REPO_URL%/}/index.yaml" -o upstream-index.yaml
+
+            - name: Extract chart entry from upstream and normalize URLs
+              env:
+                  CHART_REPO_URL: ${{ github.event.inputs.chart_repo_url }}
+                  CHART_NAME: ${{ github.event.inputs.chart_name }}
+                  CHART_VERSION: ${{ github.event.inputs.chart_version }}
+              run: |
+                  set -euo pipefail
+                  # Extract the specific chart+version entry
+                  yq '
+                    .entries[strenv(CHART_NAME)]
+                    | select(. != null)
+                    | map(select(.version == strenv(CHART_VERSION)))
+                    | .[0]
+                  ' upstream-index.yaml > entry.tmp.yaml
+
+                  if [ ! -s entry.tmp.yaml ]; then
+                    echo "Chart '${CHART_NAME}' with version '${CHART_VERSION}' not found in ${CHART_REPO_URL}."
+                    exit 1
+                  fi
+
+                  # Make URLs absolute to the upstream repo URL
+                  yq -i '
+                    .urls |= ( . // [] | map(
+                      if test("^https?://") then .
+                      else (strenv(CHART_REPO_URL) + ( if startswith("/") then . else ("/" + .) end ))
+                      end
+                    ))
+                  ' entry.tmp.yaml
+
+            - name: Merge entry into local index.yaml (create if missing)
+              env:
+                  CHART_NAME: ${{ github.event.inputs.chart_name }}
+                  CHART_VERSION: ${{ github.event.inputs.chart_version }}
+              run: |
+                  set -euo pipefail
+                  # Ensure base index.yaml exists
+                  if [ ! -f index.yaml ]; then
+                    printf "apiVersion: v1\nentries: {}\n" > index.yaml
+                  fi
+
+                  # Drop existing same-version entry if present
+                  yq -i '
+                    .entries[strenv(CHART_NAME)] =
+                      ((.entries[strenv(CHART_NAME)] // []) | map(select(.version != strenv(CHART_VERSION))))
+                  ' index.yaml
+
+                  # Append the new entry
+                  yq -i '
+                    .entries[strenv(CHART_NAME)] += [load("entry.tmp.yaml")]
+                  ' index.yaml
+
+            - name: Commit and push index.yaml only
+              run: |
+                  set -euo pipefail
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  git add index.yaml
+
+                  if ! git diff --staged --quiet; then
+                    git commit -m "ci: update index.yaml for ${{ github.event.inputs.chart_name }} ${{ github.event.inputs.chart_version }} (no tgz)"
+                    git push origin gh-pages
+                  else
+                    echo "No changes to commit."
+                  fi

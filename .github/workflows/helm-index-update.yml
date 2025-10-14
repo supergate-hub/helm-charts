@@ -28,24 +28,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) main 체크아웃 (charts/<name>/ 에 소스 배치)
       - name: Checkout main
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      # 2) Helm 설치
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
-      # 3) 도구 설치 (jq/yq/rsync/tar)
       - name: Install tooling
         run: |
           sudo apt-get update
           sudo apt-get install -y jq yq rsync coreutils
 
-      # 4) 업스트림 차트 pull + 메타 추출 + digest 계산
       - name: Pull chart from upstream & extract metadata
         env:
           REPO_NAME: ${{ github.event.inputs.chart_repo_name }}
@@ -63,47 +59,37 @@ jobs:
           TGZ_FILE="$(ls .work/${CHART}-${VERSION}.tgz)"
           echo "TGZ_FILE=${TGZ_FILE}" >> $GITHUB_ENV
 
-          # appVersion 추출
           helm show chart "${REPO_NAME}/${CHART}" --version "${VERSION}" > .work/chart.yaml
           APP_VERSION="$(yq -r '.appVersion // ""' .work/chart.yaml)"
           echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
 
-          # sha256 digest 계산(helm index에 기록할 값)
           DIGEST=$(sha256sum "${TGZ_FILE}" | awk '{print $1}')
           echo "DIGEST=${DIGEST}" >> $GITHUB_ENV
 
-          # 파일 베이스명 (= 태그/릴리스명으로 사용)
-          FILE_BASENAME="$(basename "${TGZ_FILE}")"   # e.g., harbor-1.17.1.tgz
+          FILE_BASENAME="$(basename "${TGZ_FILE}")"
           echo "FILE_BASENAME=${FILE_BASENAME}" >> $GITHUB_ENV
 
-      # 5) tgz 압축 해제 후 charts/<name>/ 에 소스 배치 (덮어쓰기 멱등)
       - name: Extract chart to main/charts/<name>
         env:
-          CHART:   ${{ github.event.inputs.chart_name }}
-          VERSION: ${{ github.event.inputs.chart_version }}
-          TGZ_FILE: ${{ env.TGZ_FILE }}
+          CHART:     ${{ github.event.inputs.chart_name }}
+          VERSION:   ${{ github.event.inputs.chart_version }}
+          TGZ_FILE:  ${{ env.TGZ_FILE }}
         run: |
           set -euo pipefail
-          # 깨끗한 워킹 디렉터리
           rm -rf .work/extracted
           mkdir -p .work/extracted
-
-          # tgz 내부에는 보통 "<chart>/" 최상위 디렉터리가 들어있음
           tar -xzf "${TGZ_FILE}" -C .work/extracted
 
-          # 실제 경로 확인 (예: .work/extracted/harbor)
           SRC_DIR=".work/extracted/${CHART}"
           if [ ! -d "${SRC_DIR}" ]; then
             echo "ERROR: expected directory ${SRC_DIR} not found after extraction"
             exit 1
           fi
 
-          # 대상 디렉터리 준비: charts/<name> (기존 파일은 삭제 후 동기화)
           DEST_DIR="charts/${CHART}"
           mkdir -p "${DEST_DIR}"
           rsync -a --delete "${SRC_DIR}/" "${DEST_DIR}/"
 
-          # 커밋
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "${DEST_DIR}"
@@ -114,18 +100,16 @@ jobs:
             echo "No changes in main (charts/${CHART}/ already up to date)."
           fi
 
-      # 6) 릴리스 생성: 태그 = 원본 tgz 파일명, 자산 업로드
       - name: Create GitHub Release (tag = tgz filename) & upload asset
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.FILE_BASENAME }}              # e.g., harbor-1.17.1.tgz
+          tag_name: ${{ env.FILE_BASENAME }}
           name: ${{ env.FILE_BASENAME }}
           draft: false
           prerelease: false
           files: |
             ${{ env.TGZ_FILE }}
 
-      # 7) gh-pages 체크아웃
       - name: Checkout gh-pages
         uses: actions/checkout@v4
         with:
@@ -133,13 +117,12 @@ jobs:
           path: gh-pages
           fetch-depth: 0
 
-      # 8) gh-pages/index.yaml 병합 갱신 (urls = 릴리스 다운로드 URL)
       - name: Merge/update gh-pages/index.yaml with release URL
         env:
-          CHART:       ${{ github.event.inputs.chart_name }}
-          VERSION:     ${{ github.event.inputs.chart_version }}
-          DIGEST:      ${{ env.DIGEST }}
-          APP_VERSION: ${{ env.APP_VERSION }}
+          CHART:         ${{ github.event.inputs.chart_name }}
+          VERSION:       ${{ github.event.inputs.chart_version }}
+          DIGEST:        ${{ env.DIGEST }}
+          APP_VERSION:   ${{ env.APP_VERSION }}
           FILE_BASENAME: ${{ env.FILE_BASENAME }}
         run: |
           set -euo pipefail
@@ -147,11 +130,10 @@ jobs:
 
           NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           OWNER_REPO="${GITHUB_REPOSITORY}"
-          FILE_NAME="${CHART}-${VERSION}.tgz"                 # e.g., harbor-1.17.1.tgz
-          TAG="${FILE_BASENAME}"                              # 동일 문자열
+          FILE_NAME="${CHART}-${VERSION}.tgz"
+          TAG="${FILE_BASENAME}"
           RELEASE_URL="https://github.com/${OWNER_REPO}/releases/download/${TAG}/${FILE_NAME}"
 
-          # index.yaml 스켈레톤
           if [ ! -f index.yaml ]; then
             cat > index.yaml <<EOF
 apiVersion: v1
@@ -163,7 +145,6 @@ EOF
           TMP_JSON=$(mktemp)
           yq -o=json '.' index.yaml > "${TMP_JSON}"
 
-          # 동일 버전 제거 후 새 블록 추가(멱등)
           jq --arg n "${CHART}" --arg v "${VERSION}" '
             .entries[$n] = ((.entries[$n] // []) | map(select(.version != $v)))
           ' "${TMP_JSON}" > "${TMP_JSON}.1" && mv "${TMP_JSON}.1" "${TMP_JSON}"
@@ -187,10 +168,8 @@ EOF
           yq -P '.' "${TMP_JSON}" > index.yaml
 
           echo "Release URL set to: ${RELEASE_URL}"
-          echo "Updated gh-pages/index.yaml (head):"
           head -n 60 index.yaml || true
 
-      # 9) gh-pages 커밋/푸시
       - name: Commit & push gh-pages
         run: |
           set -euo pipefail

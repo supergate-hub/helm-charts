@@ -96,31 +96,31 @@ jobs:
           for v in sorted({(v["PkgName"], v["VulnerabilityID"], v["Severity"]) for v in findings}):
               print(f"- {v[0]} {v[1]} ({v[2]})")
           PY
-      - name: Push to GHCR
+      # Publishing order: push under an immutable candidate tag only, gate the pushed digest with a
+      # fresh remote scan, then attach the version tags by digest. The image is never rebuilt after
+      # the scan, and version tags never point at an unscanned digest. The OCI index digest of the
+      # local archive differs from the registry push because provenance attestations carry build
+      # timestamps, so the archive digest is not compared with the pushed one.
+      - name: Push candidate to GHCR
         if: ${{ github.event_name != 'pull_request' }}
         id: push
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SOURCE_REVISION: ${{ github.sha }}
-          VERSION: ${{ steps.pins.outputs.version }}
-          BUILT_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           set -eu
           printf '%s' "${GHCR_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
-          short=${SOURCE_REVISION:0:12}
           docker buildx build --platform linux/amd64 --provenance=mode=max \
             --build-arg "SOURCE_REVISION=${SOURCE_REVISION}" \
-            --tag "${IMAGE}:${VERSION}" --tag "${IMAGE}:${VERSION}-${short}" --tag "${IMAGE}:sha-${SOURCE_REVISION}" \
+            --tag "${IMAGE}:sha-${SOURCE_REVISION}" \
             --metadata-file "${RUNNER_TEMP}/out/push-metadata.json" \
             --output type=registry images/gateway
           pushed=$(python3 -c "import json;print(json.load(open('${RUNNER_TEMP}/out/push-metadata.json'))['containerimage.digest'])")
-          test "${pushed}" = "${BUILT_DIGEST}" || { echo "pushed digest ${pushed} differs from scanned ${BUILT_DIGEST}"; exit 1; }
           echo "digest=${pushed}" >> "$GITHUB_OUTPUT"
-      - name: Rescan the pushed digest and record it
+      - name: Gate the pushed digest (High/Critical fail)
         if: ${{ github.event_name != 'pull_request' }}
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
-          VERSION: ${{ steps.pins.outputs.version }}
         run: |
           set -eu
           docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges \
@@ -128,10 +128,20 @@ jobs:
             --mount "type=bind,src=${RUNNER_TEMP}/trivy-cache,dst=/cache" \
             "${TRIVY}" image --cache-dir /cache --platform linux/amd64 --scanners vuln --ignorefile /dev/null \
             --severity HIGH,CRITICAL --exit-code 1 --timeout 10m "${IMAGE}@${DIGEST}"
+      - name: Attach version tags and record the digest
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          VERSION: ${{ steps.pins.outputs.version }}
+          SOURCE_REVISION: ${{ github.sha }}
+        run: |
+          set -eu
+          short=${SOURCE_REVISION:0:12}
+          docker buildx imagetools create --tag "${IMAGE}:${VERSION}" --tag "${IMAGE}:${VERSION}-${short}" "${IMAGE}@${DIGEST}"
           {
             echo "## Published"
             echo
-            echo "\`${IMAGE}@${DIGEST}\` (Traefik ${VERSION}, source ${GITHUB_SHA})"
+            echo "\`${IMAGE}@${DIGEST}\` (Traefik ${VERSION}, source ${GITHUB_SHA}); tags \`${VERSION}\`, \`${VERSION}-${short}\`, \`sha-${SOURCE_REVISION}\`"
             echo
             echo "Reference this digest from infra-ops gateway values. Harbor replication from GHCR keeps node pulls internal."
           } >> "$GITHUB_STEP_SUMMARY"

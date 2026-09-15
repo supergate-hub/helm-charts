@@ -1,0 +1,23 @@
+name: Commit attribution
+# A squash merge turns each pull request commit author into a Co-authored-by trailer on main, so
+# one commit made with a personal git identity credits the wrong GitHub account permanently.
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: commit-attribution-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 -m unittest discover -s tests -t . -p test_commit_attribution.py -v
+      - run: python3 scripts/check_commit_attribution.py

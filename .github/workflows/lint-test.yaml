@@ -57,4 +57,6 @@ jobs:
         if: steps.changed.outputs.changed == 'true'
         run: |
           excluded=$(python3 -c "import json;print(','.join(c['name'] for c in json.load(open('charts.lock.json'))['charts']))")
-          ct install --config ct.yaml --excluded-charts "$excluded"
+          # Supergate charts pin their objects to the namespace they are designed for (the Argo CD
+          # destination), so install into that namespace instead of a random one.
+          ct install --config ct.yaml --namespace gateway-system --excluded-charts "$excluded"

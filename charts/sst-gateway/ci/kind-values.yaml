@@ -2,8 +2,9 @@
 # operator or Cilium CRDs, no LoadBalancer implementation. The Gateway API CRDs are applied by
 # the workflow before the install (as another component would own them), so the release does
 # not render them and Helm ownership does not conflict.
+# chart-testing creates the release namespace itself.
 namespace:
-  create: true
+  create: false
 gatewayApi:
   installCrds: false
 traefik:

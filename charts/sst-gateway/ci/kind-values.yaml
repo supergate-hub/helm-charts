@@ -1,7 +1,7 @@
 # chart-testing install values for a throwaway kind cluster: no cert-manager, Prometheus
 # operator or Cilium CRDs, no LoadBalancer implementation.
 namespace:
-  create: false
+  create: true
 traefik:
   service:
     type: ClusterIP

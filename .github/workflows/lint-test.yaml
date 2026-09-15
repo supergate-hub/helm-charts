@@ -36,6 +36,20 @@ jobs:
         run: ct lint --config ct.yaml
       - uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # v1.15.0
         if: steps.changed.outputs.changed == 'true'
+      - name: Pre-apply CRDs that Supergate charts ship as templates
+        # Supergate charts render their CRDs as templates (sync-wave -20 for Argo CD) instead of
+        # crds/, so that consumers can use skipCrds against subchart CRDs. A plain helm install on
+        # an empty cluster needs those CRDs before it can validate the custom resources.
+        if: steps.changed.outputs.changed == 'true'
+        run: |
+          set -eu
+          for chart in charts/sst-*/; do
+            for crd in "$chart"templates/*-crds.yaml; do
+              [ -f "$crd" ] || continue
+              helm template pre "$chart" --show-only "templates/$(basename "$crd")" | kubectl apply --server-side -f -
+            done
+          done
+          kubectl wait --for=condition=Established crd --all --timeout=120s
       - name: Install changed charts in kind
         # Vendored upstream charts (charts.lock.json) are lint-only: several need external
         # configuration (GitHub URLs, storage, CRD owners) that a throwaway kind cluster cannot

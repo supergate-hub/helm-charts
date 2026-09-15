@@ -1,6 +1,122 @@
 apiVersion: v1
 entries:
+  cert-manager:
+  - annotations:
+      artifacthub.io/category: security
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/prerelease: "false"
+      artifacthub.io/signKey: |
+        fingerprint: 1020CF3C033D4F35BAE1C19E1226061C665DF13E
+        url: https://cert-manager.io/public-keys/cert-manager-keyring-2021-09-20-1020CF3C033D4F35BAE1C19E1226061C665DF13E.gpg
+    apiVersion: v2
+    appVersion: v1.21.1
+    created: "2026-09-15T00:21:50.62238059Z"
+    description: A Helm chart for cert-manager
+    digest: d6040d4b4b6101420926884f636fee55299dd269eb63d5848b90a860a7446e6f
+    home: https://cert-manager.io
+    icon: https://raw.githubusercontent.com/cert-manager/community/4d35a69437d21b76322157e6284be4cd64e6d2b7/logo/logo-small.png
+    keywords:
+    - cert-manager
+    - kube-lego
+    - letsencrypt
+    - tls
+    kubeVersion: '>= 1.22.0-0'
+    maintainers:
+    - email: cert-manager-maintainers@googlegroups.com
+      name: cert-manager-maintainers
+      url: https://cert-manager.io
+    name: cert-manager
+    sources:
+    - https://github.com/cert-manager/cert-manager
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/cert-manager-v1.21.1/cert-manager-v1.21.1.tgz
+    version: v1.21.1
+  external-secrets:
+  - apiVersion: v2
+    appVersion: v2.10.0
+    created: "2026-09-15T00:21:50.757928494Z"
+    dependencies:
+    - condition: bitwarden-sdk-server.enabled
+      name: bitwarden-sdk-server
+      repository: oci://ghcr.io/external-secrets/charts
+      version: v0.6.0
+    description: External secrets management for Kubernetes
+    digest: 9b0cf9f0da89c07f29eb6eb855b716c3e0abf2978ccf49c35ff778677467ce94
+    home: https://github.com/external-secrets/external-secrets
+    icon: https://raw.githubusercontent.com/external-secrets/external-secrets/main/assets/eso-logo-large.png
+    keywords:
+    - kubernetes-external-secrets
+    - secrets
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: kellinmcavoy@gmail.com
+      name: mcavoyk
+    name: external-secrets
+    type: application
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/external-secrets-2.10.0/external-secrets-2.10.0.tgz
+    version: 2.10.0
+  gha-runner-scale-set:
+  - apiVersion: v2
+    appVersion: 0.14.2
+    created: "2026-09-15T00:21:50.881781596Z"
+    description: A Helm chart for deploying an AutoScalingRunnerSet
+    digest: 18dedcbd370656004242e889a06edececc13ff56e5dfd3ed3d822e1d12399417
+    home: https://github.com/actions/actions-runner-controller
+    maintainers:
+    - name: actions
+      url: https://github.com/actions
+    name: gha-runner-scale-set
+    sources:
+    - https://github.com/actions/actions-runner-controller
+    type: application
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/gha-runner-scale-set-0.14.2/gha-runner-scale-set-0.14.2.tgz
+    version: 0.14.2
+  gha-runner-scale-set-controller:
+  - apiVersion: v2
+    appVersion: 0.14.2
+    created: "2026-09-15T00:21:51.022597112Z"
+    description: A Helm chart for install actions-runner-controller CRD
+    digest: 23454eb83c31389148763dc605affc1288f08c1aa2353ef4e43afa1c438c5cfd
+    home: https://github.com/actions/actions-runner-controller
+    maintainers:
+    - name: actions
+      url: https://github.com/actions
+    name: gha-runner-scale-set-controller
+    sources:
+    - https://github.com/actions/actions-runner-controller
+    type: application
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/gha-runner-scale-set-controller-0.14.2/gha-runner-scale-set-controller-0.14.2.tgz
+    version: 0.14.2
   harbor:
+  - apiVersion: v1
+    appVersion: 2.15.2
+    created: "2026-09-15T00:21:51.154044022Z"
+    description: An open source trusted cloud native registry that stores, signs,
+      and scans content
+    digest: ccb7be13490429b0b535fb84a2e23a14aac5b4cbf82949b5f8b01da2d16ee8a9
+    home: https://goharbor.io
+    icon: https://raw.githubusercontent.com/goharbor/website/main/static/img/logos/harbor-icon-color.png
+    keywords:
+    - docker
+    - registry
+    - harbor
+    maintainers:
+    - email: yan-yw.wang@broadcom.com
+      name: Yan Wang
+    - email: stone.zhang@broadcom.com
+      name: Stone Zhang
+    - email: miner.yang@broadcom.com
+      name: Miner Yang
+    name: harbor
+    sources:
+    - https://github.com/goharbor/harbor
+    - https://github.com/goharbor/harbor-helm
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/harbor-1.19.2/harbor-1.19.2.tgz
+    version: 1.19.2
   - apiVersion: v1
     appVersion: 2.13.1
     created: "2025-10-14T07:22:28.65965257Z"
@@ -53,6 +169,83 @@ entries:
     urls:
     - kafka-ui-0.6.2.tgz
     version: 0.6.2
+  kube-prometheus-stack:
+  - annotations:
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Chart Source
+          url: https://github.com/prometheus-community/helm-charts
+        - name: Upstream Project
+          url: https://github.com/prometheus-operator/kube-prometheus
+        - name: Upgrade Process
+          url: https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/README.md#upgrading-chart
+      artifacthub.io/operator: "true"
+    apiVersion: v2
+    appVersion: v0.93.1
+    created: "2026-09-15T00:21:51.386242602Z"
+    dependencies:
+    - condition: crds.enabled
+      name: crds
+      repository: ""
+      version: 0.0.0
+    - condition: kubeStateMetrics.enabled
+      name: kube-state-metrics
+      repository: oci://ghcr.io/prometheus-community/charts
+      version: 8.4.1
+    - condition: nodeExporter.enabled
+      name: prometheus-node-exporter
+      repository: oci://ghcr.io/prometheus-community/charts
+      version: 4.56.3
+    - condition: grafana.enabled
+      name: grafana
+      repository: oci://ghcr.io/grafana-community/helm-charts
+      version: 13.2.1
+    - condition: windowsMonitoring.enabled
+      name: prometheus-windows-exporter
+      repository: oci://ghcr.io/prometheus-community/charts
+      version: 0.12.*
+    description: kube-prometheus-stack collects Kubernetes manifests, Grafana dashboards,
+      and Prometheus rules combined with documentation and scripts to provide easy
+      to operate end-to-end Kubernetes cluster monitoring with Prometheus using the
+      Prometheus Operator.
+    digest: 6d9caea2138598fcc9c2141fff894705a47300a2a645c8eb190ed2191da6fdf2
+    home: https://github.com/prometheus-operator/kube-prometheus
+    icon: https://raw.githubusercontent.com/prometheus/prometheus.github.io/master/assets/prometheus_logo-cb55bb5c346.png
+    keywords:
+    - operator
+    - prometheus
+    - kube-prometheus
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - email: andrew@quadcorps.co.uk
+      name: andrewgkew
+      url: https://github.com/andrewgkew
+    - email: gianrubio@gmail.com
+      name: gianrubio
+      url: https://github.com/gianrubio
+    - email: github.gkarthiks@gmail.com
+      name: gkarthiks
+      url: https://github.com/gkarthiks
+    - email: kube-prometheus-stack@sisti.pt
+      name: GMartinez-Sisti
+      url: https://github.com/GMartinez-Sisti
+    - email: github@jkroepke.de
+      name: jkroepke
+      url: https://github.com/jkroepke
+    - email: miroslav.hadzhiev@gmail.com
+      name: Xtigyro
+      url: https://github.com/Xtigyro
+    - email: quentin.bisson@gmail.com
+      name: QuentinBisson
+      url: https://github.com/QuentinBisson
+    name: kube-prometheus-stack
+    sources:
+    - https://github.com/prometheus-community/helm-charts
+    - https://github.com/prometheus-operator/kube-prometheus
+    type: application
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/kube-prometheus-stack-89.2.2/kube-prometheus-stack-89.2.2.tgz
+    version: 89.2.2
   logstash:
   - apiVersion: v1
     appVersion: 8.5.1
@@ -70,6 +263,32 @@ entries:
     urls:
     - logstash-8.5.1.tgz
     version: 8.5.1
+  metallb:
+  - apiVersion: v2
+    appVersion: v0.16.1
+    created: "2026-09-15T00:21:51.506505539Z"
+    dependencies:
+    - condition: crds.enabled
+      name: crds
+      repository: ""
+      version: 0.16.1
+    - condition: frrk8s.enabled
+      name: frr-k8s
+      repository: https://metallb.github.io/frr-k8s
+      version: 0.0.25
+    description: A network load-balancer implementation for Kubernetes using standard
+      routing protocols
+    digest: 440c6dafeb451884432310a57232ce3ceb6c83297c099e17049d707341f1e15e
+    home: https://metallb.universe.tf
+    icon: https://metallb.universe.tf/images/logo/metallb-white.png
+    kubeVersion: '>= 1.19.0-0'
+    name: metallb
+    sources:
+    - https://github.com/metallb/metallb
+    type: application
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/metallb-0.16.1/metallb-0.16.1.tgz
+    version: 0.16.1
   minio:
   - apiVersion: v1
     appVersion: RELEASE.2024-12-18T13-15-44Z
@@ -198,4 +417,73 @@ entries:
     urls:
     - strimzi-kafka-operator-helm-3-chart-0.47.0.tgz
     version: 0.47.0
-generated: "2025-10-14T07:22:28.656467853Z"
+  traefik:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: fixed
+          description: "fix: grant ConfigMap write verbs to namespaced role"
+        - kind: added
+          description: "feat(deps): update traefik docker tag to v3.7.13"
+        - kind: added
+          description: "feat(deps): update ghcr.io/traefik/traefik-hub docker tag to v3.20.13"
+        - kind: added
+          description: "feat(CRDs): update Traefik Hub to v1.34.0"
+      traefik.io/hub-max-version: v3.20.13
+      traefik.io/hub-min-version: v3.19.3
+      traefik.io/proxy-max-version: v3.7.13
+      traefik.io/proxy-min-version: v3.6.0
+    apiVersion: v2
+    appVersion: v3.7.13
+    created: "2026-09-15T00:21:51.639995613Z"
+    description: A Traefik based Kubernetes ingress controller
+    digest: c6c55d7f9ec3d6597bf5f52682228db13d958ae10007fc6aa1bb702caa1857b5
+    home: https://traefik.io/
+    icon: https://raw.githubusercontent.com/traefik/traefik/master/docs/content/assets/img/traefik.logo.png
+    keywords:
+    - traefik
+    - ingress
+    - networking
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - email: michel.loiseleur@traefik.io
+      name: mloiseleur
+    - email: remi.buisson@traefik.io
+      name: darkweaver87
+    - name: jnoordsij
+    name: traefik
+    sources:
+    - https://github.com/traefik/traefik-helm-chart
+    - https://github.com/traefik/traefik
+    type: application
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/traefik-41.5.0/traefik-41.5.0.tgz
+    version: 41.5.0
+  vault:
+  - annotations:
+      charts.openshift.io/name: HashiCorp Vault
+    apiVersion: v2
+    appVersion: 2.0.4
+    created: "2026-09-15T00:21:51.772120298Z"
+    description: Official HashiCorp Vault Chart
+    digest: 1268238500ac58ad86ce38ac625be1d27d4855efde228848405f2b81c097c173
+    home: https://www.vaultproject.io
+    icon: https://github.com/hashicorp/vault/raw/f22d202cde2018f9455dec755118a9b84586e082/Vault_PrimaryLogo_Black.png
+    keywords:
+    - vault
+    - security
+    - encryption
+    - secrets
+    - management
+    - automation
+    - infrastructure
+    kubeVersion: '>= 1.20.0-0'
+    name: vault
+    sources:
+    - https://github.com/hashicorp/vault
+    - https://github.com/hashicorp/vault-helm
+    - https://github.com/hashicorp/vault-k8s
+    - https://github.com/hashicorp/vault-csi-provider
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/vault-0.34.1/vault-0.34.1.tgz
+    version: 0.34.1
+generated: "2026-09-15T00:21:51.772131921Z"

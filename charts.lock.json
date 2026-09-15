@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "note": "Vendored upstream charts, unchanged. Re-verify with: helm pull <chartRef> --version <version>; sha256sum must match.",
+  "charts": [
+    {
+      "name": "cert-manager",
+      "version": "v1.21.1",
+      "appVersion": "v1.21.1",
+      "source": "https://charts.jetstack.io",
+      "chartRef": "jetstack/cert-manager",
+      "archive": "cert-manager-v1.21.1.tgz",
+      "sha256": "c27101f3f3e2349fb4a9e704316105bf7b52ad73b8c8257d3498ef7f2f6a4adc",
+      "pulledAt": "2026-09-15"
+    },
+    {
+      "name": "external-secrets",
+      "version": "2.10.0",
+      "appVersion": "v2.10.0",
+      "source": "https://charts.external-secrets.io",
+      "chartRef": "external-secrets/external-secrets",
+      "archive": "external-secrets-2.10.0.tgz",
+      "sha256": "b96e948fff3674638b5d3f9e43886f3796e04739c4b4127929aed2ddac7d1418",
+      "pulledAt": "2026-09-15"
+    },
+    {
+      "name": "gha-runner-scale-set",
+      "version": "0.14.2",
+      "appVersion": "0.14.2",
+      "source": "oci://ghcr.io/actions/actions-runner-controller-charts",
+      "chartRef": "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set",
+      "archive": "gha-runner-scale-set-0.14.2.tgz",
+      "sha256": "1a2d104e55486cad373a9c33f3cefd0b268cd567743e57ea5da8e1ddf75e0cc0",
+      "pulledAt": "2026-09-15"
+    },
+    {
+      "name": "gha-runner-scale-set-controller",
+      "version": "0.14.2",
+      "appVersion": "0.14.2",
+      "source": "oci://ghcr.io/actions/actions-runner-controller-charts",
+      "chartRef": "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller",
+      "archive": "gha-runner-scale-set-controller-0.14.2.tgz",
+      "sha256": "222763b7edbe57eabe626cda09bb58040ed9c70471d32aab650c8e6825a3d8e7",
+      "pulledAt": "2026-09-15"
+    },
+    {
+      "name": "harbor",
+      "version": "1.19.2",
+      "appVersion": "2.15.2",
+      "source": "https://helm.goharbor.io",
+      "chartRef": "goharbor/harbor",
+      "archive": "harbor-1.19.2.tgz",
+      "sha256": "36d8eeb41b4df1aeff18c9af7709110a2fac2194b491d37957822b3359cd5e9a",
+      "pulledAt": "2026-09-15"
+    },
+    {
+      "name": "kube-prometheus-stack",
+      "version": "89.2.2",
+      "appVersion": "v0.93.1",
+      "source": "https://prometheus-community.github.io/helm-charts",
+      "chartRef": "prometheus-community/kube-prometheus-stack",
+      "archive": "kube-prometheus-stack-89.2.2.tgz",
+      "sha256": "05483f2ca0b047880e39869927ed7d313a365e7cd030e8fa782a755e44514d8f",
+      "pulledAt": "2026-09-15"
+    },
+    {
+      "name": "metallb",
+      "version": "0.16.1",
+      "appVersion": "v0.16.1",
+      "source": "https://metallb.github.io/metallb",
+      "chartRef": "metallb/metallb",
+      "archive": "metallb-0.16.1.tgz",
+      "sha256": "fb06bb584fcb7856f15733b2a6a2aff5b61b5c350687e341c163ae24a5938adc",
+      "pulledAt": "2026-09-15"
+    },
+    {
+      "name": "traefik",
+      "version": "41.5.0",
+      "appVersion": "v3.7.13",
+      "source": "https://traefik.github.io/charts",
+      "chartRef": "traefik/traefik",
+      "archive": "traefik-41.5.0.tgz",
+      "sha256": "30f8db73182019b2764179d7fc0a7efc9505670204f847ffc3a779bacaae3a1a",
+      "pulledAt": "2026-09-15"
+    },
+    {
+      "name": "vault",
+      "version": "0.34.1",
+      "appVersion": "2.0.4",
+      "source": "https://helm.releases.hashicorp.com",
+      "chartRef": "hashicorp/vault",
+      "archive": "vault-0.34.1.tgz",
+      "sha256": "df4c37fac32496892ff1e1d6fd7954d3a402cc7b1b2b4c2226af11b8a57564c4",
+      "pulledAt": "2026-09-15"
+    }
+  ]
+}

@@ -63,6 +63,13 @@ version and source. It pulls the archive, verifies and extracts it with
 branch. Open the pull request from the link in the job summary; lint runs on the pull
 request and chart-releaser publishes the release after merge.
 
+Which version to import is tracked automatically. Every Monday the **Upstream chart check**
+workflow compares `charts.lock.json` against the upstream repositories and keeps a single
+`chart-updates` issue in sync with the answer, including the `gh workflow run` line for each
+import; it closes the issue once nothing is behind. Dependabot cannot do this — it only sees
+declared dependencies — so it covers the subchart of every Supergate-owned chart
+(`charts/sst-*`) and the actions pinned in `.github/workflows/`.
+
 ## Layout
 
 | Path | Contents |
@@ -73,6 +80,7 @@ request and chart-releaser publishes the release after merge.
 | `.github/workflows/lint-test.yaml` | Pull request: `ct lint` for changed charts; `ct install` in kind for Supergate-owned charts. |
 | `.github/workflows/release.yaml` | Push to `main`: chart-releaser packages changed charts, creates a GitHub Release per chart version and updates `index.yaml` on `gh-pages`. |
 | `.github/workflows/import-chart.yaml` | Manual import of an upstream chart version into `charts/`. |
+| `.github/workflows/chart-upstream-check.yaml` | Weekly: vendored chart versions against upstream, tracked in one issue (`scripts/check_upstream_charts.py`). |
 | `.github/workflows/image-gateway.yaml` | Build, scan and publish the gateway image; see `images/gateway/README.md`. |
 | `.github/workflows/pr-title.yaml` | Pull request: title must be a Conventional Commit. |
 | `.github/workflows/release-please.yaml` | Push to `main`: release pull requests for Supergate-owned charts (`release-please-config.json`). |

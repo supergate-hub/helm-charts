@@ -1,0 +1,66 @@
+name: Import upstream chart
+# Vendors one upstream chart version into charts/<name> unchanged and records its source and
+# archive digest in charts.lock.json. The result is pushed to a branch; a human opens the pull
+# request so lint-test runs and the diff is reviewed before chart-releaser publishes it.
+on:
+  workflow_dispatch:
+    inputs:
+      chart:
+        description: Chart name (e.g. cert-manager)
+        required: true
+      version:
+        description: Exact chart version (e.g. v1.21.1)
+        required: true
+      source:
+        description: Helm repository URL (https://…) or OCI registry path (oci://ghcr.io/org/path)
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: import-${{ inputs.chart }}
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.19.0
+      - name: Pull, verify and extract
+        id: import
+        env:
+          CHART: ${{ inputs.chart }}
+          VERSION: ${{ inputs.version }}
+          SOURCE: ${{ inputs.source }}
+        run: |
+          set -eu
+          case "$CHART" in *[!a-z0-9-]*|"") echo "invalid chart name"; exit 1;; esac
+          case "$VERSION" in *[!a-zA-Z0-9.+-]*|"") echo "invalid version"; exit 1;; esac
+          mkdir -p "${RUNNER_TEMP}/dl"
+          if [ "${SOURCE#oci://}" != "$SOURCE" ]; then ref="${SOURCE%/}/${CHART}"; else helm repo add upstream "$SOURCE" >/dev/null; helm repo update upstream >/dev/null; ref="upstream/${CHART}"; fi
+          helm pull "$ref" --version "$VERSION" --destination "${RUNNER_TEMP}/dl"
+          tgz=$(ls "${RUNNER_TEMP}/dl"/*.tgz)
+          python3 scripts/vendor_chart.py "$tgz" "$CHART" "$VERSION" "$SOURCE" "$ref"
+          echo "branch=import/${CHART}-${VERSION}" >> "$GITHUB_OUTPUT"
+      - name: Push branch and print the compare link
+        env:
+          BRANCH: ${{ steps.import.outputs.branch }}
+          CHART: ${{ inputs.chart }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add charts charts.lock.json
+          git commit -m "chore(charts): import ${CHART} ${VERSION}" -m "Vendored unchanged from upstream; see charts.lock.json for the source and archive sha256."
+          git push --force-with-lease origin "HEAD:refs/heads/${BRANCH}"
+          {
+            echo "## Import ready"
+            echo
+            echo "Branch \`${BRANCH}\` pushed. Open the pull request: https://github.com/${GITHUB_REPOSITORY}/compare/main...${BRANCH}?expand=1"
+          } >> "$GITHUB_STEP_SUMMARY"

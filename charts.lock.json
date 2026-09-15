@@ -54,12 +54,12 @@
     },
     {
       "name": "kube-prometheus-stack",
-      "version": "89.2.2",
-      "appVersion": "v0.93.1",
+      "version": "91.4.0",
+      "appVersion": "v0.94.0",
       "source": "https://prometheus-community.github.io/helm-charts",
-      "chartRef": "prometheus-community/kube-prometheus-stack",
-      "archive": "kube-prometheus-stack-89.2.2.tgz",
-      "sha256": "05483f2ca0b047880e39869927ed7d313a365e7cd030e8fa782a755e44514d8f",
+      "chartRef": "upstream/kube-prometheus-stack",
+      "archive": "kube-prometheus-stack-91.4.0.tgz",
+      "sha256": "10d54f6984e5f97b2e96e64440c7c0c37af2ed1b17c1521fa6c0da3529bdeec1",
       "pulledAt": "2026-09-15"
     },
     {

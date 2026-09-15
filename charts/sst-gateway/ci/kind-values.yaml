@@ -9,7 +9,8 @@ gatewayApi:
   installCrds: false
 traefik:
   service:
-    type: ClusterIP
+    spec:
+      type: ClusterIP
   deployment:
     replicas: 1
   podDisruptionBudget:

@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -45,3 +46,23 @@ jobs:
           skip_existing: true
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Mirror the released charts to GHCR
+        # Same artifact, second address: the Pages index stays the source consumers use today,
+        # and oci://ghcr.io/supergate-hub/charts serves the ones that speak OCI. chart-releaser
+        # leaves exactly the charts it published in .cr-release-packages, so the two never drift.
+        # helm push is a no-op for a tag that already exists with the same digest.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -eu
+          packages=$(find .cr-release-packages -name '*.tgz' 2>/dev/null | sort)
+          if [ -z "$packages" ]; then
+            echo "no chart was released; nothing to mirror"
+            exit 0
+          fi
+          printf '%s' "$GH_TOKEN" | helm registry login ghcr.io --username "$ACTOR" --password-stdin
+          for package in $packages; do
+            helm push "$package" oci://ghcr.io/supergate-hub/charts
+          done
+          helm registry logout ghcr.io

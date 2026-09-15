@@ -25,6 +25,18 @@ source:
   targetRevision: <exact version>
 ```
 
+Every released chart is also pushed to `oci://ghcr.io/supergate-hub/charts`, the same archive at a
+second address for consumers that speak OCI:
+
+```console
+helm pull oci://ghcr.io/supergate-hub/charts/<chart> --version <exact version>
+```
+
+The Pages index stays the address this organization's Argo CD applications use. A chart reaches
+GHCR only after chart-releaser published it, so the two never hold different content for a
+version. Packages must be public: private packages consume the organization's shared Actions and
+Packages storage, and these charts are public anyway.
+
 ## Charts
 
 Upstream charts are vendored **unchanged** at a pinned version. `charts.lock.json` records
@@ -78,7 +90,7 @@ declared dependencies — so it covers the subchart of every Supergate-owned cha
 | `charts.lock.json` | Source and archive digest of every vendored chart. |
 | `images/<name>/` | Repackaged public upstream images published to `ghcr.io/supergate-hub/<name>` (currently `sst-traefik`). |
 | `.github/workflows/lint-test.yaml` | Pull request: `ct lint` for changed charts; `ct install` in kind for Supergate-owned charts. |
-| `.github/workflows/release.yaml` | Push to `main`: chart-releaser packages changed charts, creates a GitHub Release per chart version and updates `index.yaml` on `gh-pages`. |
+| `.github/workflows/release.yaml` | Push to `main`: chart-releaser packages changed charts, creates a GitHub Release per chart version, updates `index.yaml` on `gh-pages` and mirrors the same archives to `oci://ghcr.io/supergate-hub/charts`. |
 | `.github/workflows/import-chart.yaml` | Manual import of an upstream chart version into `charts/`. |
 | `.github/workflows/chart-upstream-check.yaml` | Weekly: vendored chart versions against upstream, tracked in one issue (`scripts/check_upstream_charts.py`). |
 | `.github/workflows/image-gateway.yaml` | Build, scan and publish the gateway image; see `images/gateway/README.md`. |

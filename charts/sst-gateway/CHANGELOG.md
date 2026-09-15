@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/supergate-hub/helm-charts/compare/sst-gateway-1.0.0...sst-gateway-1.1.0) (2026-09-15)
+
+
+### Features
+
+* **sst-gateway:** add the management gateway chart with commit-based versioning ([#4](https://github.com/supergate-hub/helm-charts/issues/4)) ([7e64866](https://github.com/supergate-hub/helm-charts/commit/7e64866c2745f3f466e4f0955a883f9596605981))
+
 ## 1.0.0 (2026-09-15)
 
 ### Features

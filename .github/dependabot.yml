@@ -1,0 +1,37 @@
+# Automated dependency pull requests. Two things are covered here:
+#   * the actions pinned by sha in .github/workflows/
+#   * the upstream dependency of every Supergate-owned chart (charts/sst-*), which is resolved
+#     from this repository's own published index
+# Vendored upstream charts (charts/<name> with an entry in charts.lock.json) are whole chart
+# trees, not declared dependencies, so Dependabot cannot see them. The weekly
+# chart-upstream-check workflow tracks those instead.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci
+      include: scope
+    labels: ["dependencies"]
+
+  # Pull request titles are the squash commit message, and for charts/sst-* release-please
+  # derives the next chart version from them: `fix` keeps the bump to a patch, which is what a
+  # subchart update is unless the wrapper's own values or templates change with it.
+  - package-ecosystem: helm
+    directory: /charts/sst-gateway
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: fix
+      include: scope
+    labels: ["dependencies"]

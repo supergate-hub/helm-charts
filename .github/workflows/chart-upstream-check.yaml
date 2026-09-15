@@ -1,0 +1,61 @@
+name: Upstream chart check
+# Dependabot only sees declared dependencies, so it covers charts/sst-* but not the vendored
+# upstream charts, which are whole chart trees pinned in charts.lock.json. This job asks the
+# upstream repositories every week which versions exist and keeps one tracking issue in sync
+# with the answer. Importing is still a human step (Import upstream chart workflow), because a
+# vendored bump replaces the chart tree and has to be reviewed as a diff.
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Monday 09:00 KST
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: chart-upstream-check
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.19.0
+      - name: Compare charts.lock.json against upstream
+        id: check
+        run: |
+          set -eu
+          python3 scripts/check_upstream_charts.py --json-out "${RUNNER_TEMP}/results.json" > "${RUNNER_TEMP}/report.md"
+          outdated=$(python3 -c 'import json,sys; print(sum(1 for r in json.load(open(sys.argv[1])) if r.get("outdated")))' "${RUNNER_TEMP}/results.json")
+          echo "outdated=${outdated}" >> "$GITHUB_OUTPUT"
+          cat "${RUNNER_TEMP}/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Open, update or close the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          OUTDATED: ${{ steps.check.outputs.outdated }}
+          TITLE: Vendored charts behind upstream
+        run: |
+          set -eu
+          gh label create chart-updates --color BFD4F2 --description "Vendored chart versions tracked against upstream" --force
+          number=$(gh issue list --state open --label chart-updates --json number --jq '.[0].number // empty')
+          {
+            echo "Checked by \`.github/workflows/chart-upstream-check.yaml\` on $(date -u +%Y-%m-%d). Run: ${GITHUB_SERVER_URL}/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            cat "${RUNNER_TEMP}/report.md"
+          } > "${RUNNER_TEMP}/body.md"
+          if [ "$OUTDATED" -eq 0 ]; then
+            if [ -n "$number" ]; then
+              gh issue close "$number" --comment "Every vendored chart is pinned to the newest upstream version."
+            fi
+            exit 0
+          fi
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file "${RUNNER_TEMP}/body.md"
+          else
+            gh issue create --title "$TITLE" --label chart-updates --body-file "${RUNNER_TEMP}/body.md"
+          fi

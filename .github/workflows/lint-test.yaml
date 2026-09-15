@@ -62,12 +62,15 @@ jobs:
           excluded=$(python3 -c "import json;print(','.join(c['name'] for c in json.load(open('charts.lock.json'))['charts']))")
           # Supergate charts pin their objects to the namespace they are designed for (the Argo CD
           # destination), so install into that namespace instead of a random one.
-          ct install --config ct.yaml --namespace gateway-system --excluded-charts "$excluded"
+          ct install --config ct.yaml --namespace gateway-system --skip-clean-up --excluded-charts "$excluded"
       - name: Diagnose the kind cluster on failure
         if: failure() && steps.changed.outputs.changed == 'true'
         run: |
           set +e
           kubectl get pods,deploy,svc,gateway,httproute --namespace gateway-system -o wide
+          kubectl get deploy --namespace gateway-system -o jsonpath='{range .items[*]}{.metadata.name} replicas={.status.replicas} ready={.status.readyReplicas} available={.status.availableReplicas} conditions={.status.conditions[*].type}={.status.conditions[*].status}{"\n"}{end}'
+          kubectl get pods --namespace gateway-system -o jsonpath='{range .items[*]}{.metadata.name} readiness={.spec.containers[0].readinessProbe} statuses={.status.containerStatuses[*].state}{"\n"}{end}'
+          kubectl get events --namespace gateway-system --sort-by=.lastTimestamp | tail -30
           kubectl get gateway --namespace gateway-system -o yaml | awk '/^status:/{f=1} f' | head -60
           for pod in $(kubectl get pods --namespace gateway-system -o name); do
             echo "=== $pod"; kubectl describe --namespace gateway-system "$pod" | awk '/^Conditions:/{f=1} /^Events:/{f=0} f' | head -20

@@ -4,12 +4,12 @@
   "charts": [
     {
       "name": "cert-manager",
-      "version": "v1.21.1",
-      "appVersion": "v1.21.1",
+      "version": "v1.21.2",
+      "appVersion": "v1.21.2",
       "source": "https://charts.jetstack.io",
-      "chartRef": "jetstack/cert-manager",
-      "archive": "cert-manager-v1.21.1.tgz",
-      "sha256": "c27101f3f3e2349fb4a9e704316105bf7b52ad73b8c8257d3498ef7f2f6a4adc",
+      "chartRef": "upstream/cert-manager",
+      "archive": "cert-manager-v1.21.2.tgz",
+      "sha256": "73a56e1728edd6c99f1f31082618c3259d279a76b7ebd3d4bdc5475c2442d34a",
       "pulledAt": "2026-09-15"
     },
     {

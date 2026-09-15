@@ -1,0 +1,21 @@
+{{- if .Values.certificate.enabled }}
+# Issued where the Issuer lives; the sync job mirrors only the leaf into the gateway namespace.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sst-gateway
+  namespace: {{ .Values.certificate.namespace }}
+spec:
+  secretName: {{ .Values.gateway.tlsSecretName }}
+  dnsNames:
+    {{- toYaml .Values.certificate.dnsNames | nindent 4 }}
+  duration: {{ .Values.certificate.duration }}
+  renewBefore: {{ .Values.certificate.renewBefore }}
+  issuerRef:
+    kind: {{ .Values.certificate.issuerRef.kind }}
+    name: {{ required "certificate.issuerRef.name is required when certificate.enabled" .Values.certificate.issuerRef.name }}
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+{{- end }}

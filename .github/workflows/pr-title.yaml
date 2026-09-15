@@ -1,0 +1,24 @@
+name: Pull request title
+# Squash merges use the pull request title as the commit message, and release-please derives
+# chart versions from it: feat -> minor, fix -> patch, feat! or BREAKING CHANGE -> major.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require a Conventional Commit title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -eu
+          if printf '%s' "$PR_TITLE" | grep -Eq '^(feat|fix|docs|refactor|test|build|ci|chore|perf|revert)(\([a-z0-9-]+\))?!?: .{1,100}$'; then
+            echo "ok: $PR_TITLE"
+          else
+            echo "Title must be a Conventional Commit, e.g. 'feat(sst-gateway): add HTTP listener' or 'chore(charts): import cert-manager v1.21.1'"
+            exit 1
+          fi

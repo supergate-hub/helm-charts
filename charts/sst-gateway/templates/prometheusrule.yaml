@@ -1,0 +1,35 @@
+{{- if .Values.prometheusRule.enabled }}
+{{- $ns := include "sst-gateway.namespace" . }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sst-gateway
+  namespace: {{ $ns }}
+  labels:
+    {{- toYaml .Values.prometheusRule.labels | nindent 4 }}
+spec:
+  groups:
+    - name: sst.gateway
+      rules:
+        - alert: SstGatewayReplicaUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="{{ $ns }}",deployment="sst-traefik"} < 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Management gateway has fewer than two available replicas
+        - alert: SstGatewayCertificateSyncFailed
+          expr: kube_job_status_failed{namespace="{{ $ns }}",job_name=~"sst-gateway-cert-sync-.*"} > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Management gateway leaf-certificate sync failed; previous certificate retained
+        - alert: SstGatewayCertificateExpiring
+          expr: traefik_tls_certs_not_after{namespace="{{ $ns }}"} - time() < 604800
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Management gateway certificate expires within seven days
+{{- end }}

@@ -1,0 +1,21 @@
+# chart-testing install values for a throwaway kind cluster: no cert-manager, Prometheus
+# operator or Cilium CRDs, no LoadBalancer implementation. The Gateway API CRDs are applied by
+# the workflow before the install (as another component would own them), so the release does
+# not render them and Helm ownership does not conflict.
+# chart-testing creates the release namespace itself.
+namespace:
+  create: false
+gatewayApi:
+  installCrds: false
+traefik:
+  service:
+    spec:
+      type: ClusterIP
+  deployment:
+    replicas: 1
+  podDisruptionBudget:
+    enabled: false
+canary:
+  replicas: 1
+networkPolicy:
+  allowedCidrs: [10.0.0.0/8]

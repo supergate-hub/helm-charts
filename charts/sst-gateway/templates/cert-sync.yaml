@@ -1,0 +1,116 @@
+{{- if .Values.certSync.enabled }}
+{{- $ns := include "sst-gateway.namespace" . }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sst-gateway-cert-sync
+  namespace: {{ $ns }}
+automountServiceAccountToken: true
+---
+# Read exactly one leaf Secret in the issuing namespace; never the CA.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sst-gateway-leaf-reader
+  namespace: {{ .Values.certificate.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get]
+    resourceNames: [{{ .Values.gateway.tlsSecretName }}]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sst-gateway-leaf-reader
+  namespace: {{ .Values.certificate.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sst-gateway-leaf-reader
+subjects:
+  - kind: ServiceAccount
+    name: sst-gateway-cert-sync
+    namespace: {{ $ns }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sst-gateway-leaf-writer
+  namespace: {{ $ns }}
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, update]
+    resourceNames: [{{ .Values.gateway.tlsSecretName }}]
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sst-gateway-leaf-writer
+  namespace: {{ $ns }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sst-gateway-leaf-writer
+subjects:
+  - kind: ServiceAccount
+    name: sst-gateway-cert-sync
+    namespace: {{ $ns }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sst-gateway-cert-sync
+  namespace: {{ $ns }}
+data:
+  cert-sync.mjs: |
+    {{- tpl (.Files.Get "files/cert-sync.mjs") . | nindent 4 }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sst-gateway-cert-sync
+  namespace: {{ $ns }}
+spec:
+  schedule: {{ .Values.certSync.schedule | quote }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 60
+      ttlSecondsAfterFinished: 600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: sst-gateway-cert-sync
+        spec:
+          serviceAccountName: sst-gateway-cert-sync
+          restartPolicy: Never
+          enableServiceLinks: false
+          securityContext:
+            {{- include "sst-gateway.podSecurityContext" . | nindent 12 }}
+          {{- include "sst-gateway.placement" . | nindent 10 }}
+          containers:
+            - name: sync
+              image: {{ .Values.certSync.image }}
+              command: [/nodejs/bin/node, /config/cert-sync.mjs]
+              securityContext:
+                {{- include "sst-gateway.containerSecurityContext" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.certSync.resources | nindent 16 }}
+              volumeMounts:
+                - name: script
+                  mountPath: /config
+                  readOnly: true
+          volumes:
+            - name: script
+              configMap:
+                name: sst-gateway-cert-sync
+{{- end }}

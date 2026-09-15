@@ -1,0 +1,70 @@
+# Traefik watches only this namespace. The cluster role reads namespace and GatewayClass
+# metadata, never cluster-wide Secrets.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.traefik.serviceAccount.name }}
+  namespace: {{ include "sst-gateway.namespace" . }}
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sst-traefik-gateway
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    verbs: [list, watch]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gatewayclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gatewayclasses/status]
+    verbs: [update]
+    resourceNames: [{{ .Values.gatewayClass.name }}]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sst-traefik-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sst-traefik-gateway
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.traefik.serviceAccount.name }}
+    namespace: {{ include "sst-gateway.namespace" . }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sst-traefik
+  namespace: {{ include "sst-gateway.namespace" . }}
+rules:
+  - apiGroups: [""]
+    resources: [services, secrets, configmaps]
+    verbs: [get, list, watch]
+  - apiGroups: [discovery.k8s.io]
+    resources: [endpointslices]
+    verbs: [list, watch]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gateways, httproutes, grpcroutes, tlsroutes, referencegrants, backendtlspolicies]
+    verbs: [get, list, watch]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gateways/status, httproutes/status, grpcroutes/status, tlsroutes/status, referencegrants/status, backendtlspolicies/status]
+    verbs: [update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sst-traefik
+  namespace: {{ include "sst-gateway.namespace" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sst-traefik
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.traefik.serviceAccount.name }}
+    namespace: {{ include "sst-gateway.namespace" . }}

@@ -36,6 +36,23 @@ jobs:
         run: ct lint --config ct.yaml
       - uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # v1.15.0
         if: steps.changed.outputs.changed == 'true'
+      - name: Pre-apply CRDs that Supergate charts ship as templates
+        # Supergate charts render their CRDs as templates (sync-wave -20 for Argo CD) instead of
+        # crds/, so that consumers can use skipCrds against subchart CRDs. A plain helm install on
+        # an empty cluster needs those CRDs before it can validate the custom resources.
+        if: steps.changed.outputs.changed == 'true'
+        run: |
+          set -eu
+          # The release namespace mirrors production: restricted Pod Security Standard.
+          kubectl create namespace gateway-system --dry-run=client -o yaml | kubectl apply -f -
+          kubectl label namespace gateway-system pod-security.kubernetes.io/enforce=restricted --overwrite
+          for chart in charts/sst-*/; do
+            for crd in "$chart"templates/*-crds.yaml; do
+              [ -f "$crd" ] || continue
+              helm template pre "$chart" --show-only "templates/$(basename "$crd")" | kubectl apply --server-side -f -
+            done
+          done
+          kubectl wait --for=condition=Established crd --all --timeout=120s
       - name: Install changed charts in kind
         # Vendored upstream charts (charts.lock.json) are lint-only: several need external
         # configuration (GitHub URLs, storage, CRD owners) that a throwaway kind cluster cannot
@@ -43,4 +60,19 @@ jobs:
         if: steps.changed.outputs.changed == 'true'
         run: |
           excluded=$(python3 -c "import json;print(','.join(c['name'] for c in json.load(open('charts.lock.json'))['charts']))")
-          ct install --config ct.yaml --excluded-charts "$excluded"
+          # Supergate charts pin their objects to the namespace they are designed for (the Argo CD
+          # destination), so install into that namespace instead of a random one.
+          ct install --config ct.yaml --namespace gateway-system --skip-clean-up --excluded-charts "$excluded"
+      - name: Diagnose the kind cluster on failure
+        if: failure() && steps.changed.outputs.changed == 'true'
+        run: |
+          set +e
+          kubectl get pods,deploy,svc,gateway,httproute --namespace gateway-system -o wide
+          kubectl get deploy --namespace gateway-system -o jsonpath='{range .items[*]}{.metadata.name} replicas={.status.replicas} ready={.status.readyReplicas} available={.status.availableReplicas} conditions={.status.conditions[*].type}={.status.conditions[*].status}{"\n"}{end}'
+          kubectl get pods --namespace gateway-system -o jsonpath='{range .items[*]}{.metadata.name} readiness={.spec.containers[0].readinessProbe} statuses={.status.containerStatuses[*].state}{"\n"}{end}'
+          kubectl get events --namespace gateway-system --sort-by=.lastTimestamp | tail -30
+          kubectl get gateway --namespace gateway-system -o yaml | awk '/^status:/{f=1} f' | head -60
+          for pod in $(kubectl get pods --namespace gateway-system -o name); do
+            echo "=== $pod"; kubectl describe --namespace gateway-system "$pod" | awk '/^Conditions:/{f=1} /^Events:/{f=0} f' | head -20
+            kubectl logs --namespace gateway-system "$pod" --all-containers --tail=60
+          done

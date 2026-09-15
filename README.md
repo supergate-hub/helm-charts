@@ -43,9 +43,17 @@ re-verified with `helm pull <chartRef> --version <version>` and `sha256sum`.
 | traefik | 41.5.0 | v3.7.13 | https://traefik.github.io/charts |
 | vault | 0.34.1 | 2.0.4 | https://helm.releases.hashicorp.com |
 
-Supergate-owned charts (wrappers that add the objects the platform needs around an upstream
-dependency) will live next to them as `charts/sst-*` and are versioned from Conventional
-Commit messages.
+Supergate-owned charts wrap an upstream dependency with the objects the platform needs:
+
+| Chart | Wraps | Notes |
+| --- | --- | --- |
+| sst-gateway | traefik 41.5.0 | Management web gateway: Gateway API, scoped RBAC, certificate mirroring, canary, network policies. See `charts/sst-gateway/README.md`. |
+
+Their versions come from Conventional Commit messages via release-please: `feat` bumps the
+minor version, `fix` the patch version, `feat!` or a `BREAKING CHANGE` footer the major
+version. Merging the generated release pull request updates `Chart.yaml` and `CHANGELOG.md`;
+chart-releaser then publishes `<chart>-<version>`. Pull requests are squash-merged, so the
+pull request title is the commit message that drives this.
 
 ## Updating a vendored chart
 
@@ -66,13 +74,15 @@ request and chart-releaser publishes the release after merge.
 | `.github/workflows/release.yaml` | Push to `main`: chart-releaser packages changed charts, creates a GitHub Release per chart version and updates `index.yaml` on `gh-pages`. |
 | `.github/workflows/import-chart.yaml` | Manual import of an upstream chart version into `charts/`. |
 | `.github/workflows/image-gateway.yaml` | Build, scan and publish the gateway image; see `images/gateway/README.md`. |
+| `.github/workflows/pr-title.yaml` | Pull request: title must be a Conventional Commit. |
+| `.github/workflows/release-please.yaml` | Push to `main`: release pull requests for Supergate-owned charts (`release-please-config.json`). |
 
 ## Contributing
 
 - Bump `version` in `Chart.yaml` for every Supergate-owned chart change; `ct lint` rejects unchanged versions. Vendored charts keep the upstream version.
 - Pin upstream dependencies and images by exact version or digest.
 - Never commit environment values, internal hostnames, addresses or credentials. This repository is public.
-- Pull request titles follow Conventional Commits.
+- Pull request titles follow Conventional Commits and are squash-merged; for `charts/sst-*` the title type decides the next version.
 
 ## License
 

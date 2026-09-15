@@ -1,0 +1,104 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $ns := include "sst-gateway.namespace" . }}
+{{- $mon := .Values.networkPolicy.monitoring }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: {{ $ns }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sst-traefik
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  policyTypes: [Ingress, Egress]
+  ingress:
+    {{- /* No client CIDRs means no client ingress at all: an empty "from" would allow every source. */}}
+    {{- with .Values.networkPolicy.allowedCidrs }}
+    - from:
+        {{- range . }}
+        - ipBlock:
+            cidr: {{ . }}
+        {{- end }}
+      ports:
+        - protocol: TCP
+          port: {{ $.Values.gateway.httpPort }}
+        - protocol: TCP
+          port: {{ $.Values.gateway.httpsPort }}
+    {{- end }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $mon.namespace }}
+          podSelector:
+            matchLabels:
+              {{- toYaml $mon.prometheusLabels | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: 9100
+  egress:
+    {{- include "sst-gateway.dnsEgress" . | nindent 4 }}
+    {{- if .Values.canary.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sst-gateway-canary
+      ports:
+        - protocol: TCP
+          port: 8080
+    {{- end }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $mon.namespace }}
+          podSelector:
+            matchLabels:
+              {{- toYaml $mon.grafanaLabels | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ $mon.grafanaPort }}
+{{- if .Values.canary.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sst-gateway-canary
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: sst-gateway-canary
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8080
+{{- end }}
+{{- if .Values.certSync.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sst-gateway-cert-sync
+  namespace: {{ $ns }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: sst-gateway-cert-sync
+  policyTypes: [Ingress, Egress]
+  egress:
+    {{- include "sst-gateway.dnsEgress" . | nindent 4 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,15 @@
+# chart-testing install values for a throwaway kind cluster: no cert-manager, Prometheus
+# operator or Cilium CRDs, no LoadBalancer implementation.
+namespace:
+  create: false
+traefik:
+  service:
+    type: ClusterIP
+  deployment:
+    replicas: 1
+  podDisruptionBudget:
+    enabled: false
+canary:
+  replicas: 1
+networkPolicy:
+  allowedCidrs: [10.0.0.0/8]

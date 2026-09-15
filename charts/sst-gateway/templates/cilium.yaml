@@ -1,0 +1,105 @@
+{{- if .Values.cilium.enabled }}
+{{- $ns := include "sst-gateway.namespace" . }}
+# API-server egress for Traefik and the certificate sync job; kubelet probe ingress.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: sst-traefik-api
+  namespace: {{ $ns }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  egress:
+    - toEntities: [kube-apiserver]
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+{{- if .Values.certSync.enabled }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: sst-gateway-cert-sync-api
+  namespace: {{ $ns }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: sst-gateway-cert-sync
+  egress:
+    - toEntities: [kube-apiserver]
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+{{- end }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: sst-traefik-probes
+  namespace: {{ $ns }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  ingress:
+    - fromEntities: [host, remote-node]
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+{{- if .Values.cilium.prober.enabled }}
+{{- $p := .Values.cilium.prober }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: sst-gateway-prober-ingress
+  namespace: {{ $ns }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ $p.namespace }}
+            {{- toYaml $p.labels | nindent 12 }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.gateway.httpsPort | quote }}
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: sst-gateway-prober-egress
+  namespace: {{ $p.namespace }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- toYaml $p.labels | nindent 6 }}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ $ns }}
+            app.kubernetes.io/name: traefik
+      toPorts:
+        - ports:
+            - port: {{ .Values.gateway.httpsPort | quote }}
+              protocol: TCP
+    {{- with $p.vip }}
+    - toCIDR: [{{ . }}/32]
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    {{- end }}
+{{- end }}
+{{- end }}

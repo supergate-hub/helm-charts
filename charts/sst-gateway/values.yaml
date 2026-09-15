@@ -1,0 +1,170 @@
+# Supergate management gateway. Environment-specific values (hostnames, addresses, node names,
+# issuers, image digests) belong in the consuming GitOps repository; the defaults here are
+# neutral so the chart lints and installs in a throwaway cluster.
+
+# Namespace that holds every namespaced object. When create is true the Namespace object is
+# rendered with the restricted Pod Security Standard and an early Argo CD sync wave.
+namespace:
+  name: gateway-system
+  create: true
+  podSecurityVersion: v1.35
+
+# Cluster DNS domain, used by the certificate-sync script to reach the API server.
+clusterDomain: cluster.local
+
+# Node placement applied to the canary and the certificate-sync job (Traefik uses its own
+# values under `traefik`).
+scheduling:
+  nodeAffinity: {}
+  tolerations: []
+
+# Pod DNS. When nameserver is set, pods use dnsPolicy None with this resolver, which keeps
+# lookups on the cluster resolver even inside a default-deny namespace.
+dns:
+  nameserver: ""
+  kubeDnsNamespace: kube-system
+  kubeDnsLabels:
+    k8s-app: kube-dns
+
+gatewayApi:
+  # Gateway API v1.6.1 standard CRDs and the safe-upgrades admission policy from the same
+  # bundle are rendered as ordinary templates (sync-wave -20) rather than from crds/, so a
+  # consumer can set Argo CD's skipCrds to keep the Traefik subchart's own CRDs out while
+  # still managing these. Disable when another component owns the Gateway API CRDs.
+  installCrds: true
+  admissionPolicy: true
+
+gatewayClass:
+  name: sst-management
+  controllerName: traefik.io/gateway-controller
+  # Traefik's Gateway provider selects GatewayClasses by this label (see traefik.providers).
+  labelKey: sst.supergate.cc/gateway
+  labelValue: management
+
+gateway:
+  name: sst-management
+  # Wildcard served on the HTTPS listener and the canary hostname on the HTTP listener.
+  wildcardHostname: "*.example.internal"
+  hostname: gateway.example.internal
+  httpsPort: 8443
+  httpPort: 8000
+  tlsSecretName: sst-gateway-tls
+
+# Minimal ready-check backend behind the gateway.
+canary:
+  enabled: true
+  replicas: 2
+  image: gcr.io/distroless/nodejs24-debian13@sha256:7781e8b4fccf59240bd539af6738cccf8dad4be303165c3a1fa065c48699b937
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 100m, memory: 96Mi}
+
+# cert-manager Certificate issued in another namespace (where the Issuer lives) and mirrored
+# into the gateway namespace by the sync job, so the gateway never reads the issuing CA.
+certificate:
+  enabled: false
+  namespace: platform-system
+  dnsNames: []
+  issuerRef:
+    kind: Issuer
+    name: ""
+  duration: 2160h
+  renewBefore: 720h
+
+certSync:
+  enabled: false
+  schedule: "*/2 * * * *"
+  image: gcr.io/distroless/nodejs24-debian13@sha256:7781e8b4fccf59240bd539af6738cccf8dad4be303165c3a1fa065c48699b937
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 100m, memory: 96Mi}
+
+# Kubernetes NetworkPolicies: default deny plus the exact flows the gateway needs.
+networkPolicy:
+  enabled: true
+  # Client CIDRs allowed to reach the listeners.
+  allowedCidrs: []
+  monitoring:
+    namespace: monitoring
+    prometheusLabels:
+      app.kubernetes.io/name: prometheus
+    grafanaLabels:
+      app.kubernetes.io/name: grafana
+    grafanaPort: 3000
+
+# Cilium policies for API-server egress, kubelet probes and the external prober.
+cilium:
+  enabled: false
+  prober:
+    enabled: false
+    namespace: monitoring
+    labels:
+      app.kubernetes.io/name: sst-prober
+    # External VIP the prober is allowed to reach on 443.
+    vip: ""
+
+# PrometheusRule for the monitoring stack (requires the Prometheus operator CRDs).
+prometheusRule:
+  enabled: false
+  labels:
+    release: monitoring
+
+# Upstream Traefik chart values. These structural settings make the wrapper coherent: the
+# chart ships its own RBAC, GatewayClass and Gateway, so the corresponding upstream toggles
+# stay off. Environment values (image, addresses, service annotations, file provider
+# routes, placement, resources) are added by the consumer.
+traefik:
+  enabled: true
+  versionOverride: v3.7.13
+  serviceAccount:
+    name: sst-traefik
+  rbac:
+    enabled: false
+  api:
+    dashboard: false
+  ingressRoute:
+    dashboard:
+      enabled: false
+  ingressClass:
+    enabled: false
+  gateway:
+    enabled: false
+  gatewayClass:
+    enabled: false
+  providers:
+    kubernetesCRD:
+      enabled: false
+    kubernetesIngress:
+      enabled: false
+    kubernetesGateway:
+      enabled: true
+      namespaces: [gateway-system]
+      labelSelector: sst.supergate.cc/gateway=management
+  ports:
+    websecure:
+      http:
+        tls:
+          enabled: false
+  log:
+    format: json
+  accessLog:
+    enabled: true
+    format: json
+    fields:
+      defaultMode: drop
+      names:
+        StartUTC: keep
+        Duration: keep
+        DownstreamStatus: keep
+        RequestMethod: keep
+        RouterName: keep
+        ServiceName: keep
+        RetryAttempts: keep
+      headers:
+        defaultMode: drop
+  metrics:
+    prometheus:
+      service:
+        enabled: true
+      serviceMonitor:
+        enabled: false

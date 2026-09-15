@@ -1,0 +1,68 @@
+{{- if .Values.canary.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sst-gateway-canary
+  namespace: {{ include "sst-gateway.namespace" . }}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sst-gateway-canary
+  namespace: {{ include "sst-gateway.namespace" . }}
+spec:
+  selector:
+    app.kubernetes.io/name: sst-gateway-canary
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sst-gateway-canary
+  namespace: {{ include "sst-gateway.namespace" . }}
+spec:
+  replicas: {{ .Values.canary.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sst-gateway-canary
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sst-gateway-canary
+    spec:
+      serviceAccountName: sst-gateway-canary
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        {{- include "sst-gateway.podSecurityContext" . | nindent 8 }}
+      {{- with .Values.scheduling.nodeAffinity }}
+      affinity:
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.scheduling.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: canary
+          image: {{ .Values.canary.image }}
+          command:
+            - /nodejs/bin/node
+            - -e
+            - "require('node:http').createServer((q,s)=>{s.setHeader('Content-Type','text/plain');s.end('SST management gateway ready\\n')}).listen(8080,'0.0.0.0')"
+          securityContext:
+            {{- include "sst-gateway.containerSecurityContext" . | nindent 12 }}
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+          resources:
+            {{- toYaml .Values.canary.resources | nindent 12 }}
+{{- end }}

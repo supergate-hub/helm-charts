@@ -1,4 +1,4 @@
-<!-- Title: Conventional Commit, e.g. feat(charts): add sst-gateway 0.1.0 / build(images): bump traefik to 3.7.14 -->
+<!-- Title: Conventional Commit; it becomes the squash commit. For charts/sst-* the type sets the next version: feat = minor, fix = patch, feat! = major. Examples: feat(sst-gateway): add HTTP listener / chore(charts): import cert-manager v1.21.1 / build(images): bump traefik to 3.7.14 -->
 
 ## Summary
 

@@ -1,0 +1,25 @@
+name: Release Please
+# Versions Supergate-owned charts from Conventional Commit messages: opens or updates a
+# release pull request that bumps Chart.yaml and CHANGELOG.md for each package listed in
+# release-please-config.json. Merging that pull request lands the bump on main; the
+# chart-releaser workflow then packages it and creates the <chart>-<version> release and tag
+# that release-please recognises as the last release. Vendored upstream charts are not
+# packages here and keep their upstream versions.
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

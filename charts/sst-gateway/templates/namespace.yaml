@@ -1,0 +1,11 @@
+{{- if .Values.namespace.create }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "sst-gateway.namespace" . }}
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: {{ .Values.namespace.podSecurityVersion | quote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+{{- end }}

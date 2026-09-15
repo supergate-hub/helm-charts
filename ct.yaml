@@ -6,7 +6,7 @@ chart-dirs:
 chart-repos:
   - supergate=https://supergate-hub.github.io/helm-charts
   - metallb=https://metallb.github.io/frr-k8s
-helm-extra-args: --timeout 600s
+helm-extra-args: --timeout 300s
 check-version-increment: true
 validate-maintainers: false
 lint-conf: .ct/lintconf.yaml

@@ -63,3 +63,13 @@ jobs:
           # Supergate charts pin their objects to the namespace they are designed for (the Argo CD
           # destination), so install into that namespace instead of a random one.
           ct install --config ct.yaml --namespace gateway-system --excluded-charts "$excluded"
+      - name: Diagnose the kind cluster on failure
+        if: failure() && steps.changed.outputs.changed == 'true'
+        run: |
+          set +e
+          kubectl get pods,deploy,svc,gateway,httproute --namespace gateway-system -o wide
+          kubectl get gateway --namespace gateway-system -o yaml | awk '/^status:/{f=1} f' | head -60
+          for pod in $(kubectl get pods --namespace gateway-system -o name); do
+            echo "=== $pod"; kubectl describe --namespace gateway-system "$pod" | awk '/^Conditions:/{f=1} /^Events:/{f=0} f' | head -20
+            kubectl logs --namespace gateway-system "$pod" --all-containers --tail=60
+          done

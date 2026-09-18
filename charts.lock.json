@@ -74,13 +74,13 @@
     },
     {
       "name": "traefik",
-      "version": "41.5.0",
+      "version": "41.6.0",
       "appVersion": "v3.7.13",
       "source": "https://traefik.github.io/charts",
-      "chartRef": "traefik/traefik",
-      "archive": "traefik-41.5.0.tgz",
-      "sha256": "30f8db73182019b2764179d7fc0a7efc9505670204f847ffc3a779bacaae3a1a",
-      "pulledAt": "2026-09-15"
+      "chartRef": "upstream/traefik",
+      "archive": "traefik-41.6.0.tgz",
+      "sha256": "cd7254ea853da73bdb88edc896f079b88d43ffa0bfe699fdbf21081361eac365",
+      "pulledAt": "2026-09-18"
     },
     {
       "name": "vault",

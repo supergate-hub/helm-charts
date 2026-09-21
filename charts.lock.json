@@ -73,6 +73,16 @@
       "pulledAt": "2026-09-15"
     },
     {
+      "name": "penpot",
+      "version": "1.9.0",
+      "appVersion": "2.17.2",
+      "source": "https://helm.penpot.app",
+      "chartRef": "upstream/penpot",
+      "archive": "penpot-1.9.0.tgz",
+      "sha256": "27ca9d34dd9ffd1a50bc6506c2a45c0ff1029b36e2d9fbbcbc7a52d12e786962",
+      "pulledAt": "2026-09-21"
+    },
+    {
       "name": "traefik",
       "version": "41.6.0",
       "appVersion": "v3.7.13",

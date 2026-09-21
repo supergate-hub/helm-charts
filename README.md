@@ -95,7 +95,7 @@ declared dependencies — so it covers the subchart of every Supergate-owned cha
 | `.github/workflows/chart-upstream-check.yaml` | Weekly: vendored chart versions against upstream, tracked in one issue (`scripts/check_upstream_charts.py`). |
 | `.github/workflows/image-gateway.yaml` | Build, scan and publish the gateway image; see `images/gateway/README.md`. |
 | `.github/workflows/pr-title.yaml` | Pull request: title must be a Conventional Commit. |
-| `.github/workflows/commit-attribution.yaml` | Pull request and `main`: commits carry an organization author and no `Co-authored-by` trailer. |
+| `.github/workflows/commit-attribution.yaml` | Pull request and `main`: commits carry an organization author. |
 | `.github/workflows/release-please.yaml` | Push to `main`: release pull requests for Supergate-owned charts (`release-please-config.json`). |
 
 ## Contributing
@@ -104,7 +104,7 @@ declared dependencies — so it covers the subchart of every Supergate-owned cha
 - Pin upstream dependencies and images by exact version or digest.
 - Never commit environment values, internal hostnames, addresses or credentials. This repository is public.
 - Pull request titles follow Conventional Commits and are squash-merged; for `charts/sst-*` the title type decides the next version.
-- Commit as the organization identity (`@supergate.cc` or a `supergate-*` noreply address) and never add a `Co-authored-by` trailer: the squash merge turns a commit author into that trailer on `main`, crediting the wrong account permanently. `scripts/check_commit_attribution.py` enforces this.
+- Commit as the organization identity (`@supergate.cc` or a `supergate-*` noreply address): the squash merge turns a commit author into a `Co-authored-by` trailer on `main`, crediting the wrong account permanently. `scripts/check_commit_attribution.py` enforces this.
 
 ## License
 

@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.check_commit_attribution import LEGACY_HEAD, allowed_author, clean_message
+from scripts.check_commit_attribution import allowed_author
 
 
 class CommitAttributionTests(unittest.TestCase):
@@ -18,16 +18,6 @@ class CommitAttributionTests(unittest.TestCase):
                       "1+jaehanbyun@users.noreply.github.com",
                       "1+supergate-jhbyun@users.noreply.github.com.example.com", None):
             self.assertFalse(allowed_author(email), email)
-
-    def test_co_author_trailers_are_rejected_in_any_casing(self):
-        self.assertTrue(clean_message("feat: add\n\nbody"))
-        for message in ("feat: add\n\nCo-authored-by: a <a@supergate.cc>",
-                        "feat: add\n\nco-authored-by: a <a@supergate.cc>",
-                        "feat: add\n\n  Co-Authored-By: Claude <noreply@anthropic.com>"):
-            self.assertFalse(clean_message(message), message)
-
-    def test_boundary_is_a_full_commit_id(self):
-        self.assertRegex(LEGACY_HEAD, r"^[a-f0-9]{40}$")
 
 
 if __name__ == "__main__":

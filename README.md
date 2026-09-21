@@ -100,7 +100,7 @@ declared dependencies — so it covers the subchart of every Supergate-owned cha
 
 ## Contributing
 
-- Bump `version` in `Chart.yaml` for every Supergate-owned chart change; `ct lint` rejects unchanged versions. Vendored charts keep the upstream version.
+- Leave `version` in `Chart.yaml` alone for a Supergate-owned chart: release-please sets it from the pull request title. Vendored charts keep the upstream version, and `ct lint` rejects a vendored change that does not move it.
 - Pin upstream dependencies and images by exact version or digest.
 - Never commit environment values, internal hostnames, addresses or credentials. This repository is public.
 - Pull request titles follow Conventional Commits and are squash-merged; for `charts/sst-*` the title type decides the next version.

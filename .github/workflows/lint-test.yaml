@@ -32,8 +32,15 @@ jobs:
             echo "$changed"
           fi
       - name: Lint changed charts
+        # A vendored chart must change version with its content. A Supergate-owned chart gets its
+        # version from release-please after the merge, so its pull requests carry no bump.
         if: steps.changed.outputs.changed == 'true'
-        run: ct lint --config ct.yaml
+        run: |
+          set -eu
+          vendored=$(python3 -c "import json;print(','.join(c['name'] for c in json.load(open('charts.lock.json'))['charts']))")
+          owned=$(python3 -c "import json;print(','.join(p.rsplit('/', 1)[-1] for p in json.load(open('release-please-config.json'))['packages']))")
+          ct lint --config ct.yaml --excluded-charts "$owned"
+          ct lint --config ct.yaml --excluded-charts "$vendored" --check-version-increment=false
       - uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # v1.15.0
         if: steps.changed.outputs.changed == 'true'
       - name: Pre-apply CRDs that Supergate charts ship as templates

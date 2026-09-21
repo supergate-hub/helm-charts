@@ -6,7 +6,7 @@
 
 ## Checklist
 
-- [ ] Charts: `Chart.yaml` version bumped for every changed chart (`ct lint` enforces it); `ct install` passes in kind
+- [ ] Charts: `Chart.yaml` version untouched for `charts/sst-*` (release-please sets it) and moved for a vendored chart (`ct lint` enforces it); `ct install` passes in kind
 - [ ] Charts: upstream dependency versions pinned exactly in `Chart.yaml`; `Chart.lock` committed
 - [ ] Images: upstream image digest, base digest and version label bumped together; the PR workflow scan passed
 - [ ] No secrets, private values or environment-specific configuration

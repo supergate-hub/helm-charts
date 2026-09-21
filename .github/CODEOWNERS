@@ -1,3 +1,3 @@
-# Replace the individual fallback with an organization platform team once that
-# team exists and has repository access.
-* @supergate-jhbyun
+# The platform team must keep explicit write access to this repository, or GitHub
+# ignores this owner and requests no review.
+* @supergate-hub/platform

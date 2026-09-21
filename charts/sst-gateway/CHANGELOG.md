@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/supergate-hub/helm-charts/compare/sst-gateway-1.0.0...sst-gateway-1.1.0) (2026-09-21)
+
+
+### Features
+
+* **sst-gateway:** allow egress to file-provider backends in other namespaces ([#20](https://github.com/supergate-hub/helm-charts/issues/20)) ([d4dbb85](https://github.com/supergate-hub/helm-charts/commit/d4dbb853e35a45616e8f7029543d033aa8bc83e7))
+
+
+### Bug Fixes
+
+* **deps:** bump traefik from 41.5.0 to 41.6.0 in /charts/sst-gateway ([#15](https://github.com/supergate-hub/helm-charts/issues/15)) ([c9f2a2e](https://github.com/supergate-hub/helm-charts/commit/c9f2a2ef3309446acb32f93c7cc339c72650c055))
+
 ## 1.0.0 (2026-09-15)
 
 ### Features

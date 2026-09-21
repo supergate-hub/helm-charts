@@ -1,8 +1,10 @@
 apiVersion: v2
 name: sst-gateway
-description: Supergate management web gateway. Wraps the upstream Traefik chart with the isolated namespace, Gateway API objects, RBAC, network policies, certificate mirroring and canary that the platform needs.
+description: Supergate management web gateway. Wraps the upstream Traefik chart
+  with the isolated namespace, Gateway API objects, RBAC, network policies,
+  certificate mirroring and canary that the platform needs.
 type: application
-version: 1.0.0
+version: 1.1.0
 appVersion: v3.7.13
 kubeVersion: ">=1.29.0-0"
 home: https://github.com/supergate-hub/helm-charts

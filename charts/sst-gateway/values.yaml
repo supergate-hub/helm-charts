@@ -91,6 +91,10 @@ networkPolicy:
     grafanaLabels:
       app.kubernetes.io/name: grafana
     grafanaPort: 3000
+  # Extra Traefik egress to file-provider backends in other namespaces. Each entry allows
+  # exactly one pod selector and TCP port, e.g.
+  #   - {namespace: apps, podLabels: {app.kubernetes.io/name: web}, port: 8080}
+  backends: []
 
 # Cilium policies for API-server egress, kubelet probes and the external prober.
 cilium:

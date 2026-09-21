@@ -65,6 +65,19 @@ spec:
       ports:
         - protocol: TCP
           port: {{ $mon.grafanaPort }}
+    {{- /* File-provider backends outside this namespace: one exact namespace, pod and port each. */}}
+    {{- range .Values.networkPolicy.backends }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ required "networkPolicy.backends[].namespace is required" .namespace }}
+          podSelector:
+            matchLabels:
+              {{- required "networkPolicy.backends[].podLabels is required" .podLabels | toYaml | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ required "networkPolicy.backends[].port is required" .port }}
+    {{- end }}
 {{- if .Values.canary.enabled }}
 ---
 apiVersion: networking.k8s.io/v1

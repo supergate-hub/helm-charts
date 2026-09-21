@@ -458,6 +458,30 @@ entries:
   sst-gateway:
   - apiVersion: v2
     appVersion: v3.7.13
+    created: "2026-09-21T07:39:53.84668052Z"
+    dependencies:
+    - condition: traefik.enabled
+      name: traefik
+      repository: https://supergate-hub.github.io/helm-charts
+      version: 41.6.0
+    description: Supergate management web gateway. Wraps the upstream Traefik chart
+      with the isolated namespace, Gateway API objects, RBAC, network policies, certificate
+      mirroring and canary that the platform needs.
+    digest: 94e02c6c5c9969adc26621ad5a8c508abe5a45b5d797cfcecf715bd682cdd7d2
+    home: https://github.com/supergate-hub/helm-charts
+    kubeVersion: '>=1.29.0-0'
+    maintainers:
+    - name: supergate-jhbyun
+    name: sst-gateway
+    sources:
+    - https://github.com/supergate-hub/helm-charts/tree/main/charts/sst-gateway
+    - https://github.com/traefik/traefik-helm-chart
+    type: application
+    urls:
+    - https://github.com/supergate-hub/helm-charts/releases/download/sst-gateway-1.1.0/sst-gateway-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
+    appVersion: v3.7.13
     created: "2026-09-15T01:29:24.726736859Z"
     dependencies:
     - condition: traefik.enabled
@@ -585,4 +609,4 @@ entries:
     urls:
     - https://github.com/supergate-hub/helm-charts/releases/download/vault-0.34.1/vault-0.34.1.tgz
     version: 0.34.1
-generated: "2026-09-21T07:39:17.449222955Z"
+generated: "2026-09-21T07:39:53.846698012Z"

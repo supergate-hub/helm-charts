@@ -1,6 +1,6 @@
 dependencies:
 - name: traefik
   repository: https://supergate-hub.github.io/helm-charts
-  version: 41.5.0
-digest: sha256:6a567ebf6dea31694e790965235a861c914986f4bb3790da8e629f09a35c179e
-generated: "2026-09-15T09:25:04.882018+09:00"
+  version: 41.6.0
+digest: sha256:e021bfada0dc62a2becebb25626035941fab0644adbeabb0a63d1572475cf04b
+generated: "2026-09-21T03:54:16.193057109Z"

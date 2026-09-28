@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/supergate-hub/helm-charts/compare/sst-gateway-1.1.0...sst-gateway-1.2.0) (2026-09-28)
+
+
+### Features
+
+* **sst-gateway:** allow in-cluster clients to reach the HTTPS listener ([#24](https://github.com/supergate-hub/helm-charts/issues/24)) ([10b9544](https://github.com/supergate-hub/helm-charts/commit/10b954417ed951ff59215f7b7a7bf97aaac30bb2))
+
 ## [1.1.0](https://github.com/supergate-hub/helm-charts/compare/sst-gateway-1.0.0...sst-gateway-1.1.0) (2026-09-21)
 
 

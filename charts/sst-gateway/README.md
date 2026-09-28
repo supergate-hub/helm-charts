@@ -25,6 +25,7 @@ deployment sets at least:
 | `gateway.wildcardHostname`, `gateway.hostname` | Listener hostnames |
 | `certificate.*`, `certSync.enabled` | Issuer, DNS names and leaf mirroring |
 | `networkPolicy.allowedCidrs` | Client networks allowed to reach the listeners |
+| `networkPolicy.clients` | In-cluster Pods allowed to reach the HTTPS listener: `namespace`, `podLabels` per entry |
 | `networkPolicy.backends` | Traefik egress to file-provider backends in other namespaces: `namespace`, `podLabels`, `port` per entry |
 | `scheduling.nodeAffinity`, `scheduling.tolerations`, `dns.nameserver`, `clusterDomain` | Placement and resolver |
 | `cilium.*`, `prometheusRule.*` | Only when those CRDs exist |

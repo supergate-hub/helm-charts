@@ -34,6 +34,19 @@ spec:
         - protocol: TCP
           port: {{ $.Values.gateway.httpsPort }}
     {{- end }}
+    {{- /* In-cluster clients of the HTTPS listener: CIDR rules do not match Pod traffic under Cilium. */}}
+    {{- range .Values.networkPolicy.clients }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ required "networkPolicy.clients[].namespace is required" .namespace }}
+          podSelector:
+            matchLabels:
+              {{- required "networkPolicy.clients[].podLabels is required" .podLabels | toYaml | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ $.Values.gateway.httpsPort }}
+    {{- end }}
     - from:
         - namespaceSelector:
             matchLabels:

@@ -19,6 +19,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -46,6 +47,23 @@ jobs:
           skip_existing: true
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Mark tagged release pull requests
+        # release-please runs with skip-github-release, so it never moves a merged release pull
+        # request from "autorelease: pending" to "autorelease: tagged"; the next run then aborts
+        # with "untagged, merged release PRs outstanding". The tag is created here, so relabel here.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          gh pr list -R "$REPO" --state merged --label "autorelease: pending" --json number,title \
+            --jq '.[] | "\(.number) \(.title)"' | while read -r number title; do
+            tag=$(printf '%s\n' "$title" | sed -nE 's/.* release ([a-z0-9-]+) ([0-9]+\.[0-9]+\.[0-9]+)$/\1-\2/p')
+            if [ -n "$tag" ] && gh api "repos/$REPO/git/ref/tags/$tag" >/dev/null 2>&1; then
+              gh pr edit "$number" -R "$REPO" --remove-label "autorelease: pending" --add-label "autorelease: tagged"
+              echo "#$number -> $tag tagged"
+            fi
+          done
       - name: Mirror the released charts to GHCR
         # Same artifact, second address: the Pages index stays the source consumers use today,
         # and oci://ghcr.io/supergate-hub/charts serves the ones that speak OCI. chart-releaser

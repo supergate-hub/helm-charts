@@ -59,6 +59,14 @@ spec:
           port: 9100
   egress:
     {{- include "sst-gateway.dnsEgress" . | nindent 4 }}
+    {{- range .Values.networkPolicy.apiServer }}
+    - to:
+        - ipBlock:
+            cidr: {{ required "networkPolicy.apiServer[].cidr is required" .cidr }}
+      ports:
+        - protocol: TCP
+          port: {{ required "networkPolicy.apiServer[].port is required" .port }}
+    {{- end }}
     {{- if .Values.canary.enabled }}
     - to:
         - podSelector:
@@ -126,5 +134,13 @@ spec:
   policyTypes: [Ingress, Egress]
   egress:
     {{- include "sst-gateway.dnsEgress" . | nindent 4 }}
+    {{- range .Values.networkPolicy.apiServer }}
+    - to:
+        - ipBlock:
+            cidr: {{ required "networkPolicy.apiServer[].cidr is required" .cidr }}
+      ports:
+        - protocol: TCP
+          port: {{ required "networkPolicy.apiServer[].port is required" .port }}
+    {{- end }}
 {{- end }}
 {{- end }}

@@ -19,3 +19,6 @@ canary:
   replicas: 1
 networkPolicy:
   allowedCidrs: [10.0.0.0/8]
+  # kind has no Cilium: exercise the plain API-server egress (the kind API server answers on 6443).
+  apiServer:
+    - {cidr: 172.18.0.0/16, port: 6443}

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/supergate-hub/helm-charts/compare/sst-gateway-1.3.0...sst-gateway-1.4.0) (2026-10-28)
+
+
+### Features
+
+* **sst-gateway:** allow API-server egress without Cilium ([#33](https://github.com/supergate-hub/helm-charts/issues/33)) ([9d2a158](https://github.com/supergate-hub/helm-charts/commit/9d2a158b687ab8fb5d3316b5488539a91a7d293e))
+
 ## [1.3.0](https://github.com/supergate-hub/helm-charts/compare/sst-gateway-1.2.0...sst-gateway-1.3.0) (2026-10-28)
 
 

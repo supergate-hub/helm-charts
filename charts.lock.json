@@ -53,6 +53,16 @@
       "pulledAt": "2026-09-15"
     },
     {
+      "name": "headlamp",
+      "version": "0.46.0",
+      "appVersion": "0.46.0",
+      "source": "https://kubernetes-sigs.github.io/headlamp/",
+      "chartRef": "upstream/headlamp",
+      "archive": "headlamp-0.46.0.tgz",
+      "sha256": "faa471a8c5c55125b3dceed1cf73000e1ced18f07e2088e5e12e75292fb9ae62",
+      "pulledAt": "2026-10-28"
+    },
+    {
       "name": "kube-prometheus-stack",
       "version": "91.4.1",
       "appVersion": "v0.94.0",

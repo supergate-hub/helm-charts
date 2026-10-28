@@ -88,6 +88,10 @@ networkPolicy:
   # Each entry allows exactly one pod selector, e.g.
   #   - {namespace: apps, podLabels: {app.kubernetes.io/name: web}}
   clients: []
+  # Admit cluster nodes (Cilium host and remote-node identities) to the HTTPS listener, for
+  # host-network clients such as kube-apiservers fetching OIDC discovery and JWKS. CIDR
+  # rules do not match node traffic under Cilium. Requires cilium.enabled.
+  nodeClients: false
   monitoring:
     namespace: monitoring
     prometheusLabels:

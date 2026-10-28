@@ -26,6 +26,7 @@ deployment sets at least:
 | `certificate.*`, `certSync.enabled` | Issuer, DNS names and leaf mirroring |
 | `networkPolicy.allowedCidrs` | Client networks allowed to reach the listeners |
 | `networkPolicy.clients` | In-cluster Pods allowed to reach the HTTPS listener: `namespace`, `podLabels` per entry |
+| `networkPolicy.nodeClients` | Admit cluster nodes (Cilium `host` and `remote-node`) to the HTTPS listener, for host-network clients such as kube-apiservers fetching OIDC keys; needs `cilium.enabled` |
 | `networkPolicy.backends` | Traefik egress to file-provider backends in other namespaces: `namespace`, `podLabels`, `port` per entry |
 | `scheduling.nodeAffinity`, `scheduling.tolerations`, `dns.nameserver`, `clusterDomain` | Placement and resolver |
 | `cilium.*`, `prometheusRule.*` | Only when those CRDs exist |

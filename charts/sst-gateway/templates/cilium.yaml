@@ -54,6 +54,25 @@ spec:
         - ports:
             - port: "8080"
               protocol: TCP
+{{- if .Values.networkPolicy.nodeClients }}
+---
+# Host-network clients on the nodes, e.g. kube-apiservers validating OIDC tokens.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: sst-traefik-node-clients
+  namespace: {{ $ns }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  ingress:
+    - fromEntities: [host, remote-node]
+      toPorts:
+        - ports:
+            - port: {{ .Values.gateway.httpsPort | quote }}
+              protocol: TCP
+{{- end }}
 {{- if .Values.cilium.prober.enabled }}
 {{- $p := .Values.cilium.prober }}
 ---

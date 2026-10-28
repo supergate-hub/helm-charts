@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.0](https://github.com/supergate-hub/helm-charts/compare/sst-gateway-1.3.0...sst-gateway-1.4.0) (2026-10-28)
+
+
+### Features
+
+* **sst-gateway:** add the management gateway chart with commit-based versioning ([#4](https://github.com/supergate-hub/helm-charts/issues/4)) ([7e64866](https://github.com/supergate-hub/helm-charts/commit/7e64866c2745f3f466e4f0955a883f9596605981))
+* **sst-gateway:** admit cluster nodes to the HTTPS listener ([#29](https://github.com/supergate-hub/helm-charts/issues/29)) ([75d81cb](https://github.com/supergate-hub/helm-charts/commit/75d81cb7eae14376989039efe434c96e2225dcc3))
+* **sst-gateway:** allow egress to file-provider backends in other namespaces ([#20](https://github.com/supergate-hub/helm-charts/issues/20)) ([d4dbb85](https://github.com/supergate-hub/helm-charts/commit/d4dbb853e35a45616e8f7029543d033aa8bc83e7))
+* **sst-gateway:** allow in-cluster clients to reach the HTTPS listener ([#24](https://github.com/supergate-hub/helm-charts/issues/24)) ([10b9544](https://github.com/supergate-hub/helm-charts/commit/10b954417ed951ff59215f7b7a7bf97aaac30bb2))
+
+
+### Bug Fixes
+
+* **deps:** bump traefik from 41.5.0 to 41.6.0 in /charts/sst-gateway ([#15](https://github.com/supergate-hub/helm-charts/issues/15)) ([c9f2a2e](https://github.com/supergate-hub/helm-charts/commit/c9f2a2ef3309446acb32f93c7cc339c72650c055))
+
 ## [1.3.0](https://github.com/supergate-hub/helm-charts/compare/sst-gateway-1.2.0...sst-gateway-1.3.0) (2026-10-28)
 
 

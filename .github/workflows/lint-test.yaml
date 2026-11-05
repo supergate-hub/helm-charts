@@ -41,7 +41,7 @@ jobs:
           owned=$(python3 -c "import json;print(','.join(p.rsplit('/', 1)[-1] for p in json.load(open('release-please-config.json'))['packages']))")
           ct lint --config ct.yaml --excluded-charts "$owned"
           ct lint --config ct.yaml --excluded-charts "$vendored" --check-version-increment=false
-      - uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # v1.15.0
+      - uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
         if: steps.changed.outputs.changed == 'true'
       - name: Pre-apply CRDs that Supergate charts ship as templates
         # Supergate charts render their CRDs as templates (sync-wave -20 for Argo CD) instead of
